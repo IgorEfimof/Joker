@@ -1,0 +1,3788 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/icon201.png">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="BSK6">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Анализатор ставок TT PRO v4.0</title>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #e74c3c;
+            --background: linear-gradient(135deg, #1a2a6c, #2c3e50, #4a235a);
+            --container-bg: rgba(255, 255, 255, 0.95);
+            --text-color: #2c3e50;
+            --card-bg: rgba(255, 255, 255, 0.9);
+            --input-bg: rgba(255, 255, 255, 0.95);
+            --input-color: #2c3e50;
+            --stats-bg: rgba(240, 240, 240, 0.9);
+            --positive-color: #27ae60;
+            --negative-color: #e74c3c;
+            --neutral-color: #3498db;
+            --team1-color: #3498db;
+            --team2-color: #e74c3c;
+            --moon-color: #f39c12;
+            --quarter-color: #9b59b6;
+            --weekend-color: #e67e22;
+            --prime-time-color: #9b59b6;
+            --joker-color: #9b59b6;
+            --banana-color: #f1c40f;
+            --optimal-color: #2ecc71;
+        }
+        
+        [data-theme="dark"] {
+            --primary-color: #3498db;
+            --secondary-color: #e74c3c;
+            --background: linear-gradient(135deg, #0d1b45, #2c3e50, #3d1e4a);
+            --container-bg: rgba(40, 40, 40, 0.95);
+            --text-color: #ecf0f1;
+            --card-bg: rgba(60, 60, 60, 0.9);
+            --input-bg: rgba(50, 50, 50, 0.95);
+            --input-color: #ecf0f1;
+            --stats-bg: rgba(30, 30, 30, 0.9);
+            --team1-color: #5dade2;
+            --team2-color: #ec7063;
+            --moon-color: #f1c40f;
+            --quarter-color: #8e44ad;
+            --weekend-color: #e67e22;
+            --prime-time-color: #9b59b6;
+            --joker-color: #8e44ad;
+            --banana-color: #f39c12;
+            --optimal-color: #27ae60;
+        }
+        
+        body {
+            background: var(--background);
+            color: var(--text-color);
+            min-height: 100vh;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background 0.3s ease;
+            touch-action: manipulation;
+            -webkit-text-size-adjust: none;
+            text-size-adjust: none;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 100%;
+            background: var(--container-bg);
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        header {
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 15px;
+            text-align: center;
+            position: relative;
+        }
+        
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 8px;
+        }
+        
+        .subtitle {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        
+        .theme-toggle {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 50%;
+            width: 35px;
+            height: 35px;
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            transition: transform 0.3s;
+        }
+        
+        .theme-toggle:hover {
+            transform: scale(1.1);
+        }
+        
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+        }
+        
+        .upload-section {
+            padding: 15px;
+            background: var(--card-bg);
+            border-radius: 10px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .results-section {
+            padding: 15px;
+            background: var(--card-bg);
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .section-title {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid var(--primary-color);
+            font-size: 1.2rem;
+        }
+        
+        .upload-area {
+            border: 2px dashed var(--primary-color);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 15px;
+        }
+        
+        .upload-area:hover {
+            background-color: rgba(44, 62, 80, 0.1);
+        }
+        
+        .upload-area.drag-over {
+            background-color: rgba(44, 62, 80, 0.2);
+            transform: scale(1.01);
+        }
+        
+        .upload-icon {
+            font-size: 35px;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+        
+        .upload-text {
+            font-size: 1rem;
+            margin-bottom: 10px;
+        }
+        
+        .upload-btn {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .upload-btn:hover {
+            background: #1c2833;
+        }
+        
+        .preview-container {
+            margin-top: 15px;
+            text-align: center;
+        }
+        
+        .preview-title {
+            font-size: 1rem;
+            margin-bottom: 8px;
+            color: var(--primary-color);
+        }
+        
+        #screenshot-preview {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+        
+        .ocr-results {
+            margin-top: 15px;
+            padding: 12px;
+            background: var(--stats-bg);
+            border-radius: 8px;
+        }
+        
+        .ocr-title {
+            font-size: 1rem;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+        
+        .ocr-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #ddd;
+            font-size: 0.9rem;
+        }
+        
+        .ocr-label {
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        .ocr-value {
+            font-weight: bold;
+        }
+        
+        .analysis-result {
+            margin-top: 20px;
+            padding: 15px;
+            background: var(--stats-bg);
+            border-radius: 8px;
+        }
+        
+        .result-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+            margin-top: 12px;
+            margin-bottom: 15px;
+        }
+        
+        .result-card {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+        
+        .result-title {
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+        }
+        
+        .result-value {
+            font-size: 1.1rem;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        .positive {
+            color: var(--positive-color);
+        }
+        
+        .negative {
+            color: var(--negative-color);
+        }
+        
+        .neutral {
+            color: var(--neutral-color);
+        }
+        
+        .recommendation {
+            margin-top: 20px;
+            padding: 15px;
+            background: linear-gradient(90deg, var(--positive-color), #2ecc71);
+            color: white;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .recommendation-title {
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+        }
+        
+        .recommendation-desc {
+            font-size: 0.9rem;
+            margin-bottom: 12px;
+        }
+        
+        .confidence {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .confidence-text {
+            margin-right: 8px;
+            font-size: 0.9rem;
+        }
+        
+        .confidence-bar {
+            width: 80px;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .confidence-fill {
+            height: 100%;
+            background: white;
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        
+        .championship-selector {
+            margin: 12px 0;
+            padding: 8px;
+            background: var(--stats-bg);
+            border-radius: 8px;
+        }
+        
+        .championship-label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: bold;
+            color: var(--primary-color);
+            font-size: 0.9rem;
+        }
+        
+        .championship-select {
+            width: 100%;
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            background: var(--input-bg);
+            color: var(--input-color);
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+        
+        .debug-info {
+            margin-top: 15px;
+            padding: 12px;
+            background: #f5f5f5;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            max-height: 150px;
+            overflow-y: auto;
+            display: none;
+        }
+        
+        .manual-input {
+            margin-top: 15px;
+            padding: 12px;
+            background: var(--stats-bg);
+            border-radius: 8px;
+        }
+        
+        .input-group {
+            margin-bottom: 8px;
+        }
+        
+        .input-label {
+            display: block;
+            margin-bottom: 4px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        
+        .input-field {
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            background: var(--input-bg);
+            color: var(--input-color);
+            font-size: 16px;
+            cursor: pointer;
+            transition: border-color 0.3s;
+            caret-color: transparent;
+        }
+        
+        .input-field:focus {
+            border-color: var(--primary-color);
+            outline: none;
+        }
+        
+        /* Custom Keyboard */
+        .custom-keyboard {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: var(--card-bg);
+            padding: 12px;
+            box-shadow: 0 -2px 15px rgba(0, 0, 0, 0.2);
+            display: none;
+            z-index: 1000;
+            transition: transform 0.3s ease;
+            touch-action: manipulation;
+        }
+        
+        .custom-keyboard.visible {
+            display: block;
+            transform: translateY(0);
+        }
+        
+        .keyboard-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            max-width: 100%;
+            margin: 0 auto;
+        }
+        
+        .keyboard-key {
+            height: 50px;
+            font-size: 1.2rem;
+            background: var(--input-bg);
+            color: var(--input-color);
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+            touch-action: manipulation;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        
+        .keyboard-key:hover {
+            background: var(--primary-color);
+            color: white;
+        }
+        
+        .keyboard-key-wide {
+            grid-column: span 2;
+        }
+        
+        .keyboard-action {
+            background: var(--primary-color);
+            color: white;
+        }
+        
+        .keyboard-action:hover {
+            background: var(--secondary-color);
+        }
+        
+        /* Tabs */
+        .tabs {
+            display: flex;
+            margin-bottom: 15px;
+            border-bottom: 2px solid var(--primary-color);
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+        
+        .tab {
+            padding: 10px 20px;
+            background: var(--card-bg);
+            border: none;
+            border-radius: 5px 5px 0 0;
+            margin-right: 4px;
+            cursor: pointer;
+            font-weight: bold;
+            color: var(--text-color);
+            transition: all 0.3s;
+            font-size: 0.9rem;
+        }
+        
+        .tab.active {
+            background: var(--primary-color);
+            color: white;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .action-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .analyze-btn {
+            background: var(--positive-color);
+            color: white;
+        }
+        
+        .analyze-btn:hover {
+            background: #219653;
+        }
+        
+        .clear-btn {
+            background: var(--negative-color);
+            color: white;
+        }
+        
+        .clear-btn:hover {
+            background: #c0392b;
+        }
+        
+        /* Media Queries for iPhone */
+        @media (max-width: 600px) {
+            body {
+                padding: 5px;
+            }
+            
+            .container {
+                border-radius: 10px;
+            }
+            
+            header {
+                padding: 12px;
+            }
+            
+            h1 {
+                font-size: 1.3rem;
+            }
+            
+            .section-title {
+                font-size: 1.1rem;
+            }
+            
+            .upload-area {
+                padding: 15px;
+            }
+            
+            .upload-icon {
+                font-size: 30px;
+            }
+            
+            .keyboard-key {
+                height: 45px;
+                font-size: 1.1rem;
+            }
+            
+            .tabs {
+                flex-direction: row;
+            }
+            
+            .tab {
+                padding: 8px 16px;
+                font-size: 0.8rem;
+            }
+        }
+        
+        @media (max-width: 350px) {
+            .keyboard-key {
+                height: 40px;
+                font-size: 1rem;
+            }
+            
+            .tab {
+                padding: 6px 12px;
+                font-size: 0.7rem;
+            }
+        }
+
+        .loading {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: var(--primary-color);
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Hide scrollbar for Chrome, Safari and Opera */
+        .tabs::-webkit-scrollbar {
+            display: none;
+        }
+        
+        /* Hide scrollbar for IE, Edge and Firefox */
+        .tabs {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+        
+        .total-type {
+            margin-left: 5px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            background: var(--primary-color);
+            color: white;
+        }
+        
+        .total-type.over {
+            background: var(--positive-color);
+        }
+        
+        .total-type.under {
+            background: var(--negative-color);
+        }
+        
+        .progress-bar {
+            height: 8px;
+            background-color: #e0e0e0;
+            border-radius: 4px;
+            margin: 10px 0;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background-color: var(--primary-color);
+            border-radius: 4px;
+            transition: width 0.5s ease;
+        }
+        
+        .status-message {
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .status-success {
+            background-color: rgba(39, 174, 96, 0.2);
+            color: var(--positive-color);
+        }
+        
+        .status-error {
+            background-color: rgba(231, 76, 60, 0.2);
+            color: var(--negative-color);
+        }
+        
+        .team-score {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 8px;
+            background-color: rgba(255, 255, 255, 0.7);
+        }
+        
+        .team-name {
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        
+        .team1 .team-name {
+            color: var(--team1-color);
+        }
+        
+        .team2 .team-name {
+            color: var(--team2-color);
+        }
+        
+        .quarters {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .quarter-score {
+            padding: 4px 8px;
+            border-radius: 4px;
+            background-color: rgba(0, 0, 0, 0.1);
+            font-size: 0.9rem;
+        }
+        
+        .total-score {
+            padding: 4px 8px;
+            border-radius: 4px;
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+        
+        .score-container {
+            margin-top: 15px;
+            padding: 12px;
+            background: var(--stats-bg);
+            border-radius: 8px;
+        }
+        
+        .score-title {
+            font-size: 1rem;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+            text-align: center;
+        }
+        
+        /* New styles for quarter predictions and moon phases */
+        .quarter-predictions {
+            margin-top: 15px;
+            padding: 12px;
+            background: var(--stats-bg);
+            border-radius: 8px;
+        }
+        
+        .quarter-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .quarter-card {
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        
+        .quarter-name {
+            font-weight: bold;
+            color: var(--quarter-color);
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+        
+        .quarter-prediction {
+            font-size: 1rem;
+            font-weight: bold;
+        }
+        
+        .moon-info {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 10px;
+            padding: 8px;
+            background: rgba(243, 156, 18, 0.1);
+            border-radius: 6px;
+            border-left: 3px solid var(--moon-color);
+        }
+        
+        .moon-icon {
+            font-size: 1.2rem;
+            margin-right: 8px;
+            color: var(--moon-color);
+        }
+        
+        .moon-text {
+            font-size: 0.9rem;
+            color: var(--moon-color);
+        }
+        
+        .gender-selector {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .gender-option {
+            flex: 1;
+            padding: 8px;
+            text-align: center;
+            border-radius: 5px;
+            background: var(--input-bg);
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid #ddd;
+        }
+        
+        .gender-option.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        
+        .prediction-details {
+            margin-top: 10px;
+            font-size: 0.8rem;
+            color: #666;
+        }
+        
+        /* Day of week and fatigue styles */
+        .day-factor-section, .fatigue-section {
+            margin: 12px 0;
+            padding: 8px;
+            background: var(--stats-bg);
+            border-radius: 8px;
+        }
+        
+        .day-selector, .fatigue-selector {
+            display: flex;
+            gap: 4px;
+            margin-top: 6px;
+            flex-wrap: wrap;
+        }
+        
+        .day-option {
+            flex: 1;
+            padding: 8px 4px;
+            text-align: center;
+            border-radius: 5px;
+            background: var(--input-bg);
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid #ddd;
+            font-size: 0.8rem;
+            min-width: 30px;
+        }
+        
+        .day-option.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        
+        .fatigue-option {
+            flex: 1;
+            padding: 8px;
+            text-align: center;
+            border-radius: 5px;
+            background: var(--input-bg);
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid #ddd;
+            font-size: 0.8rem;
+            margin-bottom: 4px;
+        }
+        
+        .fatigue-option.active {
+            background: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+        
+        .fatigue-option.optimal {
+            background: linear-gradient(90deg, var(--optimal-color), #27ae60);
+            color: white;
+            border-color: var(--optimal-color);
+            transform: scale(1.05);
+            box-shadow: 0 2px 8px rgba(46, 204, 113, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .fatigue-option.optimal::after {
+            content: '✓';
+            position: absolute;
+            top: 2px;
+            right: 5px;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+        
+        .day-info {
+            margin-top: 8px;
+            padding: 6px;
+            background: rgba(52, 152, 219, 0.1);
+            border-radius: 4px;
+            font-size: 0.8rem;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .weekend-effect {
+            background: linear-gradient(90deg, var(--weekend-color), #e67e22);
+            color: white;
+            padding: 8px;
+            border-radius: 6px;
+            margin: 10px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .fatigue-warning {
+            background: linear-gradient(90deg, var(--negative-color), #c0392b);
+            color: white;
+            padding: 8px;
+            border-radius: 6px;
+            margin: 10px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .prime-time {
+            background: linear-gradient(90deg, var(--prime-time-color), #8e44ad);
+            color: white;
+            padding: 8px;
+            border-radius: 6px;
+            margin: 10px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .factor-badge {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            background: var(--primary-color);
+            color: white;
+            font-size: 0.7rem;
+            margin-left: 5px;
+        }
+        
+        .factor-badge.positive {
+            background: var(--positive-color);
+        }
+        
+        .factor-badge.negative {
+            background: var(--negative-color);
+        }
+        
+        .factor-badge.neutral {
+            background: var(--neutral-color);
+        }
+        
+        .day-impact {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 10px;
+            padding: 8px;
+            background: rgba(52, 152, 219, 0.1);
+            border-radius: 6px;
+            border-left: 3px solid var(--primary-color);
+        }
+        
+        .day-icon {
+            font-size: 1.2rem;
+            margin-right: 8px;
+            color: var(--primary-color);
+        }
+        
+        .day-text {
+            font-size: 0.9rem;
+            color: var(--primary-color);
+        }
+        
+        .factors-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .factor-card {
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .factor-name {
+            font-weight: bold;
+            color: var(--primary-color);
+            font-size: 0.8rem;
+            margin-bottom: 5px;
+        }
+        
+        .factor-value {
+            font-size: 0.9rem;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        /* Instruction styles */
+        .instruction-content {
+            padding: 15px;
+            background: var(--stats-bg);
+            border-radius: 8px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        
+        .instruction-section {
+            margin-bottom: 20px;
+        }
+        
+        .instruction-section h3 {
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+        
+        .instruction-section p {
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+        
+        .instruction-section ul {
+            margin-left: 20px;
+            margin-bottom: 10px;
+        }
+        
+        .instruction-section li {
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+        
+        .instruction-tip {
+            background: rgba(52, 152, 219, 0.1);
+            border-left: 3px solid var(--primary-color);
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        
+        .instruction-warning {
+            background: rgba(231, 76, 60, 0.1);
+            border-left: 3px solid var(--negative-color);
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        
+        .instruction-success {
+            background: rgba(39, 174, 96, 0.1);
+            border-left: 3px solid var(--positive-color);
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        
+        /* New styles for prediction accuracy */
+        .prediction-accuracy-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        
+        .accuracy-value {
+            font-size: 1.4rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .accuracy-indicator {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-top: 10px;
+        }
+        
+        .indicator-icon {
+            font-size: 2.5rem;
+            margin-bottom: 5px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            animation: pulse 2s infinite;
+        }
+        
+        .indicator-text {
+            font-size: 0.9rem;
+            font-weight: bold;
+            padding: 4px 10px;
+            border-radius: 20px;
+            text-transform: uppercase;
+        }
+        
+        .joker-indicator {
+            color: var(--joker-color);
+        }
+        
+        .joker-text {
+            background: linear-gradient(90deg, var(--joker-color), #8e44ad);
+            color: white;
+        }
+        
+        .banana-indicator {
+            color: var(--banana-color);
+        }
+        
+        .banana-text {
+            background: linear-gradient(90deg, var(--banana-color), #f39c12);
+            color: #2c3e50;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .accuracy-details {
+            font-size: 0.8rem;
+            color: #666;
+            text-align: center;
+            margin-top: 5px;
+        }
+        
+        /* Comparison styles */
+        .comparison-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 10px;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 6px;
+        }
+        
+        .comparison-item {
+            flex: 1;
+            text-align: center;
+            padding: 5px;
+        }
+        
+        .comparison-label {
+            font-size: 0.8rem;
+            color: var(--primary-color);
+            margin-bottom: 3px;
+        }
+        
+        .comparison-value {
+            font-size: 1rem;
+            font-weight: bold;
+        }
+        
+        .comparison-difference {
+            font-size: 1.2rem;
+            font-weight: bold;
+            padding: 5px 10px;
+            border-radius: 4px;
+            min-width: 60px;
+        }
+        
+        .difference-positive {
+            background-color: rgba(39, 174, 96, 0.2);
+            color: var(--positive-color);
+        }
+        
+        .difference-negative {
+            background-color: rgba(231, 76, 60, 0.2);
+            color: var(--negative-color);
+        }
+        
+        .difference-neutral {
+            background-color: rgba(52, 152, 219, 0.2);
+            color: var(--neutral-color);
+        }
+        
+        /* Joker/Banana explanation */
+        .indicator-explanation {
+            margin-top: 10px;
+            padding: 8px;
+            background: var(--stats-bg);
+            border-radius: 6px;
+            font-size: 0.8rem;
+            text-align: center;
+        }
+        
+        .explanation-title {
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 5px;
+        }
+        
+        /* Scanning animation */
+        .scanning-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            display: none;
+        }
+        
+        .scanning-content {
+            background: var(--container-bg);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            max-width: 90%;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .scanning-title {
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+        }
+        
+        .scanning-text {
+            margin-bottom: 20px;
+            color: var(--text-color);
+        }
+        
+        .scanning-progress {
+            width: 100%;
+            height: 8px;
+            background: var(--stats-bg);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+        
+        .scanning-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+        
+        .scanning-steps {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .scanning-step {
+            flex: 1;
+            text-align: center;
+            padding: 8px;
+            margin: 0 2px;
+            border-radius: 4px;
+            background: var(--stats-bg);
+            transition: all 0.3s;
+            min-width: 100px;
+        }
+        
+        .scanning-step.active {
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            transform: scale(1.05);
+        }
+        
+        .scanning-step.completed {
+            background: var(--positive-color);
+            color: white;
+        }
+        
+        /* Optimal result styles */
+        .optimal-result {
+            background: linear-gradient(90deg, var(--optimal-color), #2ecc71);
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            text-align: center;
+            animation: glow 2s infinite alternate;
+        }
+        
+        @keyframes glow {
+            from { box-shadow: 0 0 5px rgba(46, 204, 113, 0.5); }
+            to { box-shadow: 0 0 15px rgba(46, 204, 113, 0.8); }
+        }
+        
+        .optimal-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .optimal-details {
+            font-size: 0.9rem;
+        }
+        
+        /* Fatigue comparison table */
+        .fatigue-comparison {
+            margin-top: 15px;
+            overflow-x: auto;
+        }
+        
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        
+        .comparison-table th {
+            background: var(--primary-color);
+            color: white;
+            padding: 10px;
+            text-align: center;
+            font-size: 0.8rem;
+        }
+        
+        .comparison-table td {
+            padding: 8px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+            font-size: 0.9rem;
+        }
+        
+        .comparison-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .comparison-table tr.optimal-row {
+            background: linear-gradient(90deg, rgba(46, 204, 113, 0.1), rgba(39, 174, 96, 0.1));
+        }
+        
+        .difference-cell {
+            font-weight: bold;
+        }
+        
+        .difference-cell.optimal {
+            color: var(--optimal-color);
+            font-weight: bold;
+        }
+        
+        .difference-cell.good {
+            color: var(--positive-color);
+        }
+        
+        .difference-cell.poor {
+            color: var(--negative-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Анализатор ставок TT PRO v4.0</h1>
+            <div class="subtitle">Автоматический поиск оптимальной усталости команд</div>
+            <button class="theme-toggle" id="theme-toggle">🌙</button>
+        </header>
+        
+        <div class="tabs">
+            <button class="tab active" data-tab="upload">Загрузка</button>
+            <button class="tab" data-tab="results">Результаты</button>
+            <button class="tab" data-tab="stats">Статистика</button>
+            <button class="tab" data-tab="quarters">Прогноз по четвертям</button>
+            <button class="tab" data-tab="factors">Факторы влияния</button>
+            <button class="tab" data-tab="instruction">Инструкция</button>
+        </div>
+        
+        <div class="main-content">
+            <div class="upload-section tab-content active" id="upload-tab">
+                <h2 class="section-title">Загрузка данных</h2>
+                
+                <div class="championship-selector">
+                    <label class="championship-label">Лига:</label>
+                    <select class="championship-select" id="league-select">
+                        <option value="12_4">NBA (4×12 мин)</option>
+                        <option value="10_4">ФИБА (4×10 мин)</option>
+                        <option value="12_4_3x3">3×3 (4×12 мин)</option>
+                        <option value="10_4_3x3">3×3 (4×10 мин)</option>
+                        <option value="10_2_4x4">4×4 (2×10 мин)</option>
+                        <option value="5_4_cyber">Кибербаскетбол (4×5 мин)</option>
+                    </select>
+                </div>
+                
+                <!-- НОВЫЙ БЛОК: День недели -->
+                <div class="day-factor-section">
+                    <label class="championship-label">День недели:</label>
+                    <div class="day-selector">
+                        <div class="day-option" data-day="1">ПН</div>
+                        <div class="day-option" data-day="2">ВТ</div>
+                        <div class="day-option" data-day="3">СР</div>
+                        <div class="day-option" data-day="4">ЧТ</div>
+                        <div class="day-option active" data-day="5">ПТ</div>
+                        <div class="day-option" data-day="6">СБ</div>
+                        <div class="day-option" data-day="0">ВС</div>
+                    </div>
+                    <div class="day-info" id="day-info">
+                        <i class="fas fa-info-circle"></i>
+                        <span>Пятница: высокая результативность (+4.2%)</span>
+                    </div>
+                </div>
+                
+                <!-- НОВЫЙ БЛОК: Усталость команд (теперь только отображение) -->
+                <div class="fatigue-section">
+                    <label class="championship-label">Усталость команд (автовыбор):</label>
+                    <div class="fatigue-selector" id="fatigue-display">
+                        <div class="fatigue-option" data-fatigue="rested">Отдохнувшие (+2 дня)</div>
+                        <div class="fatigue-option" data-fatigue="normal">Нормальный отдых (+1 день)</div>
+                        <div class="fatigue-option" data-fatigue="tired">Back-to-back (-5.7%)</div>
+                        <div class="fatigue-option" data-fatigue="exhausted">3 игры за 4 дня (-8.3%)</div>
+                    </div>
+                    <div class="optimal-result" id="optimal-result" style="display: none;">
+                        <div class="optimal-title">🎯 Оптимальный вариант найден!</div>
+                        <div class="optimal-details" id="optimal-details">Загрузите данные для автоматического поиска</div>
+                    </div>
+                </div>
+                
+                <div class="gender-selector">
+                    <div class="gender-option active" data-gender="male">Мужчины</div>
+                    <div class="gender-option" data-gender="female">Женщины</div>
+                    <div class="gender-option" data-gender="mixed">Смешанные</div>
+                </div>
+                
+                <div class="moon-info">
+                    <div class="moon-icon" id="moon-icon">🌑</div>
+                    <div class="moon-text" id="moon-text">Расчет лунной фазы...</div>
+                </div>
+                
+                <div class="upload-area" id="upload-area">
+                    <div class="upload-icon">
+                        <i class="fas fa-camera"></i>
+                    </div>
+                    <div class="upload-text">
+                        Нажмите для выбора файла или перетащите скриншот
+                    </div>
+                    <button class="upload-btn" id="upload-btn">Выбрать файл</button>
+                </div>
+                
+                <input type="file" id="screenshot-input" accept="image/*" style="display: none;">
+                
+                <div class="preview-container">
+                    <div class="preview-title">Предпросмотр:</div>
+                    <img id="screenshot-preview" src="" alt="Превью скриншота">
+                </div>
+                
+                <div class="progress-bar" id="progress-bar" style="display: none;">
+                    <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+                </div>
+                
+                <div id="status-message"></div>
+                
+                <div class="manual-input">
+                    <h3>Или введите данные вручную:</h3>
+                    <div class="input-group">
+                        <label class="input-label">Счет (Команда 1 : Команда 2)</label>
+                        <input type="text" class="input-field" id="manual-score" placeholder="100:92" readonly>
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Период</label>
+                        <input type="number" class="input-field" id="manual-period" placeholder="1-4" min="1" max="4" readonly>
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Время (мин:сек)</label>
+                        <input type="text" class="input-field" id="manual-time" placeholder="01:27" readonly>
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Тотал</label>
+                        <input type="text" class="input-field" id="manual-total" placeholder="237.5" readonly>
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Тип тотала</label>
+                        <select class="input-field" id="manual-total-type" style="appearance: menulist;">
+                            <option value="over">ТБ (Тотал больше)</option>
+                            <option value="under">ТМ (Тотал меньше)</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label class="input-label">Фора</label>
+                        <input type="text" class="input-field" id="manual-handicap" placeholder="-6.5" readonly>
+                    </div>
+                    
+                    <div class="action-buttons">
+                        <button class="action-btn analyze-btn" id="manual-submit">Анализировать (автопоиск)</button>
+                        <button class="action-btn clear-btn" id="clear-btn">Очистить</button>
+                    </div>
+                </div>
+                
+                <div class="score-container">
+                    <h3 class="score-title">Распознанный счет по периодам</h3>
+                    <div class="team-score team1">
+                        <span class="team-name" id="team1-name">Команда 1</span>
+                        <div class="quarters">
+                            <span class="quarter-score" id="team1-q1">-</span>
+                            <span class="quarter-score" id="team1-q2">-</span>
+                            <span class="quarter-score" id="team1-q3">-</span>
+                            <span class="quarter-score" id="team1-q4">-</span>
+                            <span class="total-score" id="team1-total">0</span>
+                        </div>
+                    </div>
+                    <div class="team-score team2">
+                        <span class="team-name" id="team2-name">Команда 2</span>
+                        <div class="quarters">
+                            <span class="quarter-score" id="team2-q1">-</span>
+                            <span class="quarter-score" id="team2-q2">-</span>
+                            <span class="quarter-score" id="team2-q3">-</span>
+                            <span class="quarter-score" id="team2-q4">-</span>
+                            <span class="total-score" id="team2-total">0</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="ocr-results">
+                    <h3 class="ocr-title">Распознанные данные:</h3>
+                    <div class="ocr-item">
+                        <span class="ocr-label">Счет:</span>
+                        <span class="ocr-value" id="ocr-score">--</span>
+                    </div>
+                    <div class="ocr-item">
+                        <span class="ocr-label">Период:</span>
+                        <span class="ocr-value" id="ocr-period">--</span>
+                    </div>
+                    <div class="ocr-item">
+                        <span class="ocr-label">Время:</span>
+                        <span class="ocr-value" id="ocr-time">--</span>
+                    </div>
+                    <div class="ocr-item">
+                        <span class="ocr-label">Оставшееся время:</span>
+                        <span class="ocr-value" id="ocr-time-remaining">--</span>
+                    </div>
+                    <div class="ocr-item">
+                        <span class="ocr-label">Тотал:</span>
+                        <span class="ocr-value" id="ocr-total">--</span>
+                    </div>
+                    <div class="ocr-item">
+                        <span class="ocr-label">Тип тотала:</span>
+                        <span class="ocr-value" id="ocr-total-type">--</span>
+                    </div>
+                    <div class="ocr-item">
+                        <span class="ocr-label">Фора:</span>
+                        <span class="ocr-value" id="ocr-handicap">--</span>
+                    </div>
+                </div>
+                
+                <div class="debug-info" id="debug-info">
+                    <h4>Отладочная информация:</h4>
+                    <div id="debug-text"></div>
+                </div>
+            </div>
+            
+            <div class="results-section tab-content" id="results-tab">
+                <h2 class="section-title">Результаты анализа</h2>
+                
+                <div class="analysis-result">
+                    <h3>Прогноз на оставшуюся часть матча</h3>
+                    
+                    <div class="result-grid">
+                        <div class="result-card">
+                            <div class="result-title">Ожидаемый тотал</div>
+                            <div class="result-value neutral" id="predicted-total">--</div>
+                        </div>
+                        
+                        <div class="result-card">
+                            <div class="result-title">Темп игры</div>
+                            <div class="result-value neutral" id="predicted-pace">--</div>
+                        </div>
+                        
+                        <div class="result-card">
+                            <div class="result-title">Прогноз счета</div>
+                            <div class="result-value neutral" id="predicted-score">--</div>
+                        </div>
+                        
+                        <div class="result-card">
+                            <div class="result-title">Сравнение прогнозов</div>
+                            <div class="prediction-accuracy-container">
+                                <div class="accuracy-value" id="prediction-accuracy">--</div>
+                                
+                                <!-- Блок сравнения прогноза счета и ожидаемого тотала -->
+                                <div class="comparison-container" id="comparison-container" style="display: none;">
+                                    <div class="comparison-item">
+                                        <div class="comparison-label">Прогноз счета</div>
+                                        <div class="comparison-value" id="score-prediction-value">--</div>
+                                    </div>
+                                    <div class="comparison-item">
+                                        <div class="comparison-label">Ожидаемый тотал</div>
+                                        <div class="comparison-value" id="total-prediction-value">--</div>
+                                    </div>
+                                    <div class="comparison-item">
+                                        <div class="comparison-label">Разница</div>
+                                        <div class="comparison-difference neutral" id="prediction-difference">--</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Индикатор Joker/Banana -->
+                                <div class="accuracy-indicator" id="accuracy-indicator" style="display: none;">
+                                    <div class="indicator-icon" id="indicator-icon">🃏</div>
+                                    <div class="indicator-text joker-text" id="indicator-text">JOKER</div>
+                                </div>
+                                
+                                <div class="accuracy-details" id="accuracy-details"></div>
+                            </div>
+                            
+                            <!-- Объяснение индикаторов -->
+                            <div class="indicator-explanation" id="indicator-explanation" style="display: none;">
+                                <div class="explanation-title">Объяснение индикаторов:</div>
+                                <div id="explanation-text">Чем меньше расхождение между прогнозом счета и ожидаемым тоталом, тем точнее прогноз</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Сравнение всех вариантов усталости -->
+                    <div class="fatigue-comparison" id="fatigue-comparison" style="display: none;">
+                        <h4>Сравнение всех вариантов усталости:</h4>
+                        <table class="comparison-table">
+                            <thead>
+                                <tr>
+                                    <th>Усталость</th>
+                                    <th>Коэффициент</th>
+                                    <th>Прогноз счета</th>
+                                    <th>Прогноз тотала</th>
+                                    <th>Разница</th>
+                                </tr>
+                            </thead>
+                            <tbody id="fatigue-comparison-body">
+                                <!-- Заполняется динамически -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="recommendation">
+                    <div class="recommendation-title">Рекомендуемая ставка</div>
+                    <div class="recommendation-desc" id="recommendation-text">Загрузите скриншот или введите данные</div>
+                    
+                    <div class="confidence">
+                        <span class="confidence-text">Уверенность:</span>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill" id="confidence-bar" style="width: 0%"></div>
+                        </div>
+                        <span id="confidence-value" style="margin-left: 8px;">0%</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="results-section tab-content" id="stats-tab">
+                <h2 class="section-title">Статистика матча</h2>
+                
+                <div class="analysis-result">
+                    <h3>Ключевые показатели</h3>
+                    
+                    <div class="result-grid">
+                        <div class="result-card">
+                            <div class="result-title">Текущий темп игры</div>
+                            <div class="result-value neutral" id="current-pace">--</div>
+                        </div>
+                        
+                        <div class="result-card">
+                            <div class="result-title">Средний темп лиги</div>
+                            <div class="result-value neutral" id="league-pace">--</div>
+                        </div>
+                        
+                        <div class="result-card">
+                            <div class="result-title">Прогресс матча</div>
+                            <div class="result-value neutral" id="match-progress">--</div>
+                        </div>
+                        
+                        <div class="result-card">
+                            <div class="result-title">Эффективность атаки</div>
+                            <div class="result-value neutral" id="offensive-efficiency">--</div>
+                        </div>
+                    </div>
+                    
+                    <div class="result-grid" style="grid-template-columns: 1fr 1fr; margin-top: 15px;">
+                        <div class="result-card">
+                            <div class="result-title" id="team1-stats-name">Команда 1 (PPG)</div>
+                            <div class="result-value neutral" id="team1-ppg">--</div>
+                        </div>
+                        
+                        <div class="result-card">
+                            <div class="result-title" id="team2-stats-name">Команда 2 (PPG)</div>
+                            <div class="result-value neutral" id="team2-ppg">--</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="recommendation">
+                    <div class="recommendation-title">Анализ тотала</div>
+                    <div class="recommendation-desc" id="total-analysis">Загрузите скриншот для анализа</div>
+                    
+                    <div class="confidence">
+                        <span class="confidence-text">Точность анализа:</span>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill" id="analysis-confidence-bar" style="width: 0%"></div>
+                        </div>
+                        <span id="analysis-confidence-value" style="margin-left: 8px;">0%</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="results-section tab-content" id="quarters-tab">
+                <h2 class="section-title">Прогноз по четвертям</h2>
+                
+                <div class="quarter-predictions">
+                    <h3>Прогноз на следующие четверти</h3>
+                    
+                    <div class="quarter-grid">
+                        <div class="quarter-card">
+                            <div class="quarter-name">2-я четверть</div>
+                            <div class="quarter-prediction" id="q2-prediction">--</div>
+                            <div class="prediction-details" id="q2-details">ТБ/ТМ: --</div>
+                        </div>
+                        
+                        <div class="quarter-card">
+                            <div class="quarter-name">3-я четверть</div>
+                            <div class="quarter-prediction" id="q3-prediction">--</div>
+                            <div class="prediction-details" id="q3-details">ТБ/ТМ: --</div>
+                        </div>
+                    </div>
+                    
+                    <div class="moon-info">
+                        <div class="moon-icon" id="moon-impact-icon">🌕</div>
+                        <div class="moon-text" id="moon-impact-text">Влияние лунной фазы: рассчитывается...</div>
+                    </div>
+                </div>
+                
+                <div class="analysis-result">
+                    <h3>Факторы влияния на четверти</h3>
+                    
+                    <div class="result-grid">
+                        <div class="result-card">
+                            <div class="result-title">Влияние пола команд</div>
+                            <div class="result-value neutral" id="gender-impact">--</div>
+                        </div>
+                        
+                        <div class="result-card">
+                            <div class="result-title">Исторический темп 2-й четверти</div>
+                            <div class="result-value neutral" id="q2-historical">--</div>
+                        </div>
+                        
+                        <div class="result-card">
+                            <div class="result-title">Исторический темп 3-й четверти</div>
+                            <div class="result-value neutral" id="q3-historical">--</div>
+                        </div>
+                        
+                        <div class="result-card">
+                            <div class="result-title">Лунный коэффициент</div>
+                            <div class="result-value neutral" id="moon-coefficient">--</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="recommendation">
+                    <div class="recommendation-title">Рекомендация по четвертям</div>
+                    <div class="recommendation-desc" id="quarters-recommendation">Загрузите данные для получения рекомендаций по ставкам на четверти</div>
+                    
+                    <div class="confidence">
+                        <span class="confidence-text">Точность прогноза:</span>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill" id="quarters-confidence-bar" style="width: 0%"></div>
+                        </div>
+                        <span id="quarters-confidence-value" style="margin-left: 8px;">0%</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- НОВАЯ ВКЛАДКА: Факторы влияния -->
+            <div class="results-section tab-content" id="factors-tab">
+                <h2 class="section-title">Факторы влияния на матч</h2>
+                
+                <div class="analysis-result">
+                    <h3>Влияние дня недели и усталости</h3>
+                    
+                    <div id="day-impact-container">
+                        <!-- Динамически заполняется JavaScript -->
+                    </div>
+                    
+                    <div class="factors-grid">
+                        <div class="factor-card">
+                            <div class="factor-name">День недели</div>
+                            <div class="factor-value" id="day-factor-value">--</div>
+                        </div>
+                        
+                        <div class="factor-card">
+                            <div class="factor-name">Усталость команд</div>
+                            <div class="factor-value" id="fatigue-factor-value">--</div>
+                        </div>
+                        
+                        <div class="factor-card">
+                            <div class="factor-name">Пол команд</div>
+                            <div class="factor-value" id="gender-factor-value">--</div>
+                        </div>
+                        
+                        <div class="factor-card">
+                            <div class="factor-name">Лунная фаза</div>
+                            <div class="factor-value" id="moon-factor-value">--</div>
+                        </div>
+                    </div>
+                    
+                    <div class="result-grid" style="margin-top: 15px;">
+                        <div class="result-card">
+                            <div class="result-title">Суммарный коэффициент влияния</div>
+                            <div class="result-value neutral" id="total-factor-value">--</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="recommendation">
+                    <div class="recommendation-title">Итоговый анализ факторов</div>
+                    <div class="recommendation-desc" id="factors-analysis">Загрузите данные для анализа факторов влияния</div>
+                    
+                    <div class="confidence">
+                        <span class="confidence-text">Влияние на точность:</span>
+                        <div class="confidence-bar">
+                            <div class="confidence-fill" id="factors-confidence-bar" style="width: 0%"></div>
+                        </div>
+                        <span id="factors-confidence-value" style="margin-left: 8px;">0%</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- НОВАЯ ВКЛАДКА: Инструкция -->
+            <div class="results-section tab-content" id="instruction-tab">
+                <h2 class="section-title">Инструкция по использованию</h2>
+                
+                <div class="instruction-content">
+                    <div class="instruction-section">
+                        <h3>🎯 Основное назначение</h3>
+                        <p>Программа анализирует баскетбольные матчи в реальном времени и предоставляет рекомендации по ставкам на тоталы (ТБ/ТМ) с учетом множества факторов.</p>
+                        <p><strong>НОВАЯ ФУНКЦИЯ:</strong> Автоматический поиск оптимального уровня усталости команд!</p>
+                    </div>
+                    
+                    <div class="instruction-section">
+                        <h3>📱 Как пользоваться</h3>
+                        
+                        <h4>1. Начало работы</h4>
+                        <ul>
+                            <li>Откройте программу в браузере</li>
+                            <li>Выберите подходящую тему (светлая/темная) кнопкой в правом верхнем углу</li>
+                        </ul>
+                        
+                        <h4>2. Настройка параметров матча</h4>
+                        <p><strong>Лига:</strong></p>
+                        <ul>
+                            <li>Выберите тип лиги (NBA, ФИБА, 3×3, 4×4, Кибербаскетбол)</li>
+                            <li>Программа автоматически подстроит расчеты под выбранный формат</li>
+                        </ul>
+                        
+                        <p><strong>День недели:</strong></p>
+                        <ul>
+                            <li>Укажите день проведения матча</li>
+                            <li>Программа учитывает статистику результативности по дням недели</li>
+                        </ul>
+                        
+                        <p><strong>Усталость команд (АВТОМАТИЧЕСКИЙ ПОИСК):</strong></p>
+                        <ul>
+                            <li>Программа сама просканирует все 4 варианта усталости:
+                                <ul>
+                                    <li>Отдохнувшие (+2 дня отдыха)</li>
+                                    <li>Нормальный отдых (+1 день)</li>
+                                    <li>Back-to-back (2 игры подряд)</li>
+                                    <li>3 игры за 4 дня</li>
+                                </ul>
+                            </li>
+                            <li>После анализа программа выберет вариант с минимальным расхождением между прогнозом счета и ожидаемым тоталом</li>
+                            <li>Оптимальный вариант будет выделен зеленым цветом с галочкой</li>
+                        </ul>
+                        
+                        <p><strong>Пол команд:</strong></p>
+                        <ul>
+                            <li>Мужчины, женщины или смешанные команды</li>
+                        </ul>
+                        
+                        <h4>3. Загрузка данных</h4>
+                        <p><strong>Способ 1: Скриншот (рекомендуется)</strong></p>
+                        <ul>
+                            <li>Нажмите "Выбрать файл" в области загрузки</li>
+                            <li>Или перетащите скриншот матча в выделенную область</li>
+                            <li>Программа автоматически распознает:
+                                <ul>
+                                    <li>Счет по четвертям</li>
+                                    <li>Текущий период</li>
+                                    <li>Оставшееся время</li>
+                                    <li>Тотал и тип ставки</li>
+                                    <li>Фору</li>
+                                </ul>
+                            </li>
+                        </ul>
+                        
+                        <p><strong>Способ 2: Ручной ввод</strong></p>
+                        <ul>
+                            <li>Заполните поля в разделе "Или введите данные вручную":
+                                <ul>
+                                    <li>Счет (формат: 100:92)</li>
+                                    <li>Период (1-4)</li>
+                                    <li>Время (формат: 01:27)</li>
+                                    <li>Тотал (например: 237.5)</li>
+                                    <li>Тип тотала (ТБ/ТМ)</li>
+                                    <li>Фора (например: -6.5)</li>
+                                </ul>
+                            </li>
+                        </ul>
+                        
+                        <h4>4. Просмотр результатов</h4>
+                        <p><strong>Вкладка "Результаты"</strong></p>
+                        <ul>
+                            <li>Прогноз тотала на оставшуюся часть матча</li>
+                            <li>Темп игры</li>
+                            <li>Прогноз итогового счета</li>
+                            <li><strong>Сравнение прогнозов</strong> - анализ расхождения между прогнозом счета и ожидаемым тоталом</li>
+                            <li><strong>Индикатор Joker/Banana</strong> - показывает точность прогноза на основе расхождения</li>
+                            <li><strong>Сравнение всех вариантов усталости</strong> - таблица с результатами сканирования всех 4 вариантов</li>
+                            <li>Рекомендация по ставке с указанием уверенности</li>
+                        </ul>
+                        
+                        <p><strong>Вкладка "Статистика"</strong></p>
+                        <ul>
+                            <li>Текущий темп игры</li>
+                            <li>Сравнение со средним темпом лиги</li>
+                            <li>Прогресс матча</li>
+                            <li>Эффективность атаки</li>
+                            <li>PPG команд</li>
+                        </ul>
+                        
+                        <p><strong>Вкладка "Прогноз по четвертям"</strong></p>
+                        <ul>
+                            <li>Прогноз очков во 2-й и 3-й четвертях</li>
+                            <li>Рекомендации по ставкам на четверти</li>
+                            <li>Учет лунной фазы и других факторов</li>
+                        </ul>
+                        
+                        <p><strong>Вкладка "Факторы влияния"</strong></p>
+                        <ul>
+                            <li>Детальный анализ влияния дня недели</li>
+                            <li>Учет усталости команд</li>
+                            <li>Влияние пола игроков</li>
+                            <li>Лунный коэффициент</li>
+                            <li>Суммарное влияние на результативность</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="instruction-section">
+                        <h3>🔍 Советы по использованию</h3>
+                        
+                        <div class="instruction-tip">
+                            <p><strong>Для лучшего распознавания скриншотов:</strong></p>
+                            <ul>
+                                <li>Используйте четкие скриншоты с хорошим контрастом</li>
+                                <li>Убедитесь, что текст хорошо читаем</li>
+                                <li>Желательно, чтобы на скриншоте были видны:
+                                    <ul>
+                                        <li>Счет по четвертям</li>
+                                        <li>Текущее время матча</li>
+                                        <li>Тотал и фора</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <div class="instruction-tip">
+                            <p><strong>При ручном вводе:</strong></p>
+                            <ul>
+                                <li>Используйте кастомную клавиатуру для ввода данных</li>
+                                <li>Следите за правильным форматом:
+                                    <ul>
+                                        <li>Счет: 100:92</li>
+                                        <li>Время: 05:30</li>
+                                        <li>Тотал: 215.5</li>
+                                        <li>Фора: -4.5</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="instruction-section">
+                        <h3>📊 Как интерпретировать результаты</h3>
+                        
+                        <p><strong>Индикаторы точности прогноза:</strong></p>
+                        <ul>
+                            <li>🃏 <strong>JOKER</strong> - минимальное расхождение (менее 5 очков) между прогнозом счета и ожидаемым тоталом. Высокая точность прогноза.</li>
+                            <li>🍌 <strong>BANANA</strong> - значительное расхождение (5 очков и более). Низкая точность прогноза.</li>
+                        </ul>
+                        
+                        <p><strong>Автоматический поиск усталости:</strong></p>
+                        <ul>
+                            <li>Программа автоматически проверяет все 4 варианта усталости команд</li>
+                            <li>Выбирается вариант с минимальным расхождением между прогнозом счета и тоталом</li>
+                            <li>Оптимальный вариант выделяется зеленым цветом с галочкой</li>
+                            <li>В таблице сравнения можно увидеть результаты всех вариантов</li>
+                        </ul>
+                        
+                        <p><strong>Рекомендации по ставкам:</strong></p>
+                        <ul>
+                            <li>🟢 ЗЕЛЕНЫЙ блок - рекомендуемая ставка</li>
+                            <li>Процент уверенности показывает надежность рекомендации</li>
+                            <li>Учитывайте все факторы влияния перед принятием решения</li>
+                        </ul>
+                        
+                        <p><strong>Важные показатели:</strong></p>
+                        <ul>
+                            <li>Темп игры > 2.0 - высокая результативность</li>
+                            <li>Темп игры < 1.5 - низкая результативность</li>
+                            <li>Влияние факторов > +3% - повышенная результативность ожидается</li>
+                            <li>Влияние факторов < -3% - пониженная результативность ожидается</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="instruction-section">
+                        <h3>⚠️ Важные примечания</h3>
+                        
+                        <div class="instruction-warning">
+                            <ul>
+                                <li>Программа использует статистические модели и исторические данные</li>
+                                <li>Все расчеты носят рекомендательный характер</li>
+                                <li>Учитывайте текущую форму команд, травмы и другие факторы</li>
+                                <li>Делайте ставки ответственно</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="instruction-section">
+                        <h3>🔄 Обновление данных</h3>
+                        
+                        <p>Программа автоматически:</p>
+                        <ul>
+                            <li>Рассчитывает лунные фазы</li>
+                            <li>Обновляет статистику по дням недели</li>
+                            <li>Учитывает выбранные параметры лиги</li>
+                            <li>Сканирует все варианты усталости команд при каждом анализе</li>
+                            <li>Выбирает оптимальный вариант с минимальным расхождением</li>
+                        </ul>
+                        
+                        <p>Для обновления анализа просто измените любой параметр или загрузите новые данные.</p>
+                    </div>
+                    
+                    <div class="instruction-success">
+                        <p><strong>Удачи в использовании Анализатора ставок TT PRO v4.0! 🏀</strong></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Keyboard -->
+    <div class="custom-keyboard" id="custom-keyboard">
+        <div class="keyboard-grid">
+            <button class="keyboard-key" data-value="1">1</button>
+            <button class="keyboard-key" data-value="2">2</button>
+            <button class="keyboard-key" data-value="3">3</button>
+            <button class="keyboard-key keyboard-action" data-action="backspace">⌫</button>
+            <button class="keyboard-key" data-value="4">4</button>
+            <button class="keyboard-key" data-value="5">5</button>
+            <button class="keyboard-key" data-value="6">6</button>
+            <button class="keyboard-key" data-value=":">:</button>
+            <button class="keyboard-key" data-value="7">7</button>
+            <button class="keyboard-key" data-value="8">8</button>
+            <button class="keyboard-key" data-value="9">9</button>
+            <button class="keyboard-key" data-value=".">.</button>
+            <button class="keyboard-key" data-value="0">0</button>
+            <button class="keyboard-key" data-value="-">-</button>
+            <button class="keyboard-key" data-value="+">+</button>
+            <button class="keyboard-key keyboard-key-wide keyboard-action" data-action="close">Готово</button>
+        </div>
+    </div>
+
+    <!-- Scanning Overlay -->
+    <div class="scanning-overlay" id="scanning-overlay">
+        <div class="scanning-content">
+            <div class="scanning-title">🔍 Сканирование вариантов усталости</div>
+            <div class="scanning-text" id="scanning-text">Анализируем все 4 варианта усталости команд...</div>
+            
+            <div class="scanning-progress">
+                <div class="scanning-progress-bar" id="scanning-progress-bar"></div>
+            </div>
+            
+            <div class="scanning-steps" id="scanning-steps">
+                <!-- Заполняется динамически -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const uploadArea = document.getElementById('upload-area');
+            const fileInput = document.getElementById('screenshot-input');
+            const uploadBtn = document.getElementById('upload-btn');
+            const previewImg = document.getElementById('screenshot-preview');
+            const leagueSelect = document.getElementById('league-select');
+            const debugInfo = document.getElementById('debug-info');
+            const debugText = document.getElementById('debug-text');
+            const manualSubmit = document.getElementById('manual-submit');
+            const clearBtn = document.getElementById('clear-btn');
+            const themeToggle = document.getElementById('theme-toggle');
+            const customKeyboard = document.getElementById('custom-keyboard');
+            const manualInputs = document.querySelectorAll('.input-field');
+            const tabs = document.querySelectorAll('.tab');
+            const tabContents = document.querySelectorAll('.tab-content');
+            const totalTypeSelect = document.getElementById('manual-total-type');
+            const progressBar = document.getElementById('progress-bar');
+            const progressFill = document.getElementById('progress-fill');
+            const statusMessage = document.getElementById('status-message');
+            const genderOptions = document.querySelectorAll('.gender-option');
+            const moonIcon = document.getElementById('moon-icon');
+            const moonText = document.getElementById('moon-text');
+            const moonImpactIcon = document.getElementById('moon-impact-icon');
+            const moonImpactText = document.getElementById('moon-impact-text');
+            const scanningOverlay = document.getElementById('scanning-overlay');
+            const scanningProgressBar = document.getElementById('scanning-progress-bar');
+            const scanningText = document.getElementById('scanning-text');
+            const scanningSteps = document.getElementById('scanning-steps');
+            const fatigueDisplay = document.getElementById('fatigue-display');
+            const optimalResult = document.getElementById('optimal-result');
+            const optimalDetails = document.getElementById('optimal-details');
+            const fatigueComparison = document.getElementById('fatigue-comparison');
+            const fatigueComparisonBody = document.getElementById('fatigue-comparison-body');
+            
+            // НОВЫЕ ПЕРЕМЕННЫЕ: Дни недели и усталость
+            const dayOptions = document.querySelectorAll('.day-option');
+            const fatigueOptionsDisplay = fatigueDisplay.querySelectorAll('.fatigue-option');
+            const dayInfo = document.getElementById('day-info');
+            const dayImpactContainer = document.getElementById('day-impact-container');
+            
+            // Элементы для отображения счета по четвертям
+            const team1Name = document.getElementById('team1-name');
+            const team2Name = document.getElementById('team2-name');
+            const team1Q1 = document.getElementById('team1-q1');
+            const team1Q2 = document.getElementById('team1-q2');
+            const team1Q3 = document.getElementById('team1-q3');
+            const team1Q4 = document.getElementById('team1-q4');
+            const team1Total = document.getElementById('team1-total');
+            const team2Q1 = document.getElementById('team2-q1');
+            const team2Q2 = document.getElementById('team2-q2');
+            const team2Q3 = document.getElementById('team2-q3');
+            const team2Q4 = document.getElementById('team2-q4');
+            const team2Total = document.getElementById('team2-total');
+            const team1StatsName = document.getElementById('team1-stats-name');
+            const team2StatsName = document.getElementById('team2-stats-name');
+            
+            // Элементы для прогноза по четвертям
+            const q2Prediction = document.getElementById('q2-prediction');
+            const q3Prediction = document.getElementById('q3-prediction');
+            const q2Details = document.getElementById('q2-details');
+            const q3Details = document.getElementById('q3-details');
+            const genderImpact = document.getElementById('gender-impact');
+            const q2Historical = document.getElementById('q2-historical');
+            const q3Historical = document.getElementById('q3-historical');
+            const moonCoefficient = document.getElementById('moon-coefficient');
+            const quartersRecommendation = document.getElementById('quarters-recommendation');
+            const quartersConfidenceBar = document.getElementById('quarters-confidence-bar');
+            const quartersConfidenceValue = document.getElementById('quarters-confidence-value');
+            
+            // НОВЫЕ ЭЛЕМЕНТЫ: Факторы влияния
+            const dayFactorValue = document.getElementById('day-factor-value');
+            const fatigueFactorValue = document.getElementById('fatigue-factor-value');
+            const genderFactorValue = document.getElementById('gender-factor-value');
+            const moonFactorValue = document.getElementById('moon-factor-value');
+            const totalFactorValue = document.getElementById('total-factor-value');
+            const factorsAnalysis = document.getElementById('factors-analysis');
+            const factorsConfidenceBar = document.getElementById('factors-confidence-bar');
+            const factorsConfidenceValue = document.getElementById('factors-confidence-value');
+            
+            // НОВЫЕ ЭЛЕМЕНТЫ: Сравнение прогнозов
+            const predictionAccuracy = document.getElementById('prediction-accuracy');
+            const comparisonContainer = document.getElementById('comparison-container');
+            const scorePredictionValue = document.getElementById('score-prediction-value');
+            const totalPredictionValue = document.getElementById('total-prediction-value');
+            const predictionDifference = document.getElementById('prediction-difference');
+            const accuracyIndicator = document.getElementById('accuracy-indicator');
+            const indicatorIcon = document.getElementById('indicator-icon');
+            const indicatorText = document.getElementById('indicator-text');
+            const accuracyDetails = document.getElementById('accuracy-details');
+            const indicatorExplanation = document.getElementById('indicator-explanation');
+            const explanationText = document.getElementById('explanation-text');
+            
+            let activeInput = null;
+            let isDarkTheme = localStorage.getItem('darkTheme') === 'true';
+            let totalType = 'over';
+            let teamNames = ['Команда 1', 'Команда 2'];
+            let currentGender = 'male';
+            let moonPhase = '';
+            let moonFactor = 1.0;
+            
+            // НОВЫЕ ПЕРЕМЕННЫЕ: Дни недели и усталость
+            let currentDay = 5; // По умолчанию пятница
+            let currentFatigue = 'rested'; // По умолчанию отдохнувшие
+            let optimalFatigue = null; // Оптимальная усталость после сканирования
+            let fatigueScanResults = []; // Результаты сканирования всех вариантов
+            
+            // Базы данных темпов игры для разных лиг
+            const leaguePaceData = {
+                '12_4': 2.15, // NBA
+                '10_4': 1.65, // ФИБА
+                '12_4_3x3': 1.8, // 3×3 (4×12 мин)
+                '10_4_3x3': 1.5, // 3×3 (4×10 мин)
+                '10_2_4x4': 1.7, // 4×4 (2×10 мин)
+                '5_4_cyber': 2.0  // Кибербаскетбол
+            };
+            
+            // Исторические данные по четвертям для разных лиг (очков за четверть)
+            const quarterPaceData = {
+                '12_4': { q1: 55, q2: 58, q3: 54, q4: 56 }, // NBA
+                '10_4': { q1: 42, q2: 44, q3: 41, q4: 43 }, // ФИБА
+                '12_4_3x3': { q1: 48, q2: 50, q3: 47, q4: 49 }, // 3×3 (4×12 мин)
+                '10_4_3x3': { q1: 40, q2: 42, q3: 39, q4: 41 }, // 3×3 (4×10 мин)
+                '10_2_4x4': { q1: 45, q2: 47, q3: 44, q4: 46 }, // 4×4 (2×10 мин)
+                '5_4_cyber': { q1: 25, q2: 26, q3: 24, q4: 25 } // Кибербаскетбол
+            };
+            
+            // Коэффициенты влияния пола на темп игры
+            const genderFactors = {
+                'male': 1.0,
+                'female': 0.85,
+                'mixed': 0.92
+            };
+            
+            // НОВЫЕ ДАННЫЕ: Коэффициенты дней недели (на основе статистики NBA)
+            const dayFactors = {
+                1: { factor: 0.99, name: "Понедельник", desc: "Начало недели: стандартная результативность", effect: "-1.0%" },
+                2: { factor: 0.98, name: "Вторник", desc: "Будний день: немного сниженная результативность", effect: "-2.0%" },
+                3: { factor: 1.00, name: "Среда", desc: "Середина недели: стандартная результативность", effect: "±0.0%" },
+                4: { factor: 0.99, name: "Четверг", desc: "Предпятничный день: стандартная результативность", effect: "-1.0%" },
+                5: { factor: 1.042, name: "Пятница", desc: "Конец недели: повышенная результативность", effect: "+4.2%" },
+                6: { factor: 1.025, name: "Суббота", desc: "Выходной: высокая результативность", effect: "+2.5%" },
+                0: { factor: 1.035, name: "Воскресенье", desc: "Телевизионный день: высокая результативность", effect: "+3.5%" }
+            };
+            
+            // НОВЫЕ ДАННЫЕ: Коэффициенты усталости команд
+            const fatigueFactors = {
+                'rested': { factor: 1.02, name: "Отдохнувшие", desc: "2+ дня отдыха: повышенная результативность", effect: "+2.0%" },
+                'normal': { factor: 1.00, name: "Нормальный отдых", desc: "1 день отдыха: стандартная результативность", effect: "±0.0%" },
+                'tired': { factor: 0.943, name: "Back-to-back", desc: "2 игры подряд: сниженная результативность", effect: "-5.7%" },
+                'exhausted': { factor: 0.917, name: "3 игры за 4 дня", desc: "Высокая усталость: сильно сниженная результативность", effect: "-8.3%" }
+            };
+            
+            // Apply saved theme
+            if (isDarkTheme) {
+                document.body.setAttribute('data-theme', 'dark');
+                themeToggle.textContent = '☀️';
+            }
+            
+            // Calculate moon phase
+            calculateMoonPhase();
+            
+            // Set up day of week selection
+            dayOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    dayOptions.forEach(opt => opt.classList.remove('active'));
+                    this.classList.add('active');
+                    currentDay = parseInt(this.getAttribute('data-day'));
+                    updateDayInfo();
+                    // Recalculate predictions if we have data
+                    if (document.getElementById('manual-score').value) {
+                        processManualInput();
+                    }
+                });
+            });
+            
+            // Update day info display
+            function updateDayInfo() {
+                const dayData = dayFactors[currentDay];
+                dayInfo.innerHTML = `<i class="fas fa-info-circle"></i><span>${dayData.name}: ${dayData.desc} <span class="factor-badge ${dayData.effect.includes('+') ? 'positive' : dayData.effect.includes('-') ? 'negative' : 'neutral'}">${dayData.effect}</span></span>`;
+            }
+            
+            // Initialize day info
+            updateDayInfo();
+            
+            // Set up gender selection
+            genderOptions.forEach(option => {
+                option.addEventListener('click', function() {
+                    genderOptions.forEach(opt => opt.classList.remove('active'));
+                    this.classList.add('active');
+                    currentGender = this.getAttribute('data-gender');
+                    // Recalculate predictions if we have data
+                    if (document.getElementById('manual-score').value) {
+                        processManualInput();
+                    }
+                });
+            });
+            
+            // Moon phase calculation function
+            function calculateMoonPhase() {
+                const now = new Date();
+                const start = new Date(now.getFullYear(), 0, 0);
+                const diff = now - start;
+                const oneDay = 1000 * 60 * 60 * 24;
+                const dayOfYear = Math.floor(diff / oneDay);
+                
+                // Simplified moon phase calculation based on day of year
+                const moonDay = dayOfYear % 29.53; // Moon cycle is approximately 29.53 days
+                
+                if (moonDay < 1) {
+                    moonPhase = 'new';
+                    moonIcon.textContent = '🌑';
+                    moonText.textContent = 'Новолуние';
+                    moonImpactIcon.textContent = '🌑';
+                    moonImpactText.textContent = 'Новолуние: низкая активность';
+                    moonFactor = 0.95;
+                } else if (moonDay < 7.5) {
+                    moonPhase = 'waxing';
+                    moonIcon.textContent = '🌒';
+                    moonText.textContent = 'Растущая луна';
+                    moonImpactIcon.textContent = '🌒';
+                    moonImpactText.textContent = 'Растущая луна: возрастающая активность';
+                    moonFactor = 1.02;
+                } else if (moonDay < 15) {
+                    moonPhase = 'full';
+                    moonIcon.textContent = '🌕';
+                    moonText.textContent = 'Полнолуние';
+                    moonImpactIcon.textContent = '🌕';
+                    moonImpactText.textContent = 'Полнолуние: пиковая активность';
+                    moonFactor = 1.08;
+                } else if (moonDay < 22.5) {
+                    moonPhase = 'waning';
+                    moonIcon.textContent = '🌖';
+                    moonText.textContent = 'Убывающая луна';
+                    moonImpactIcon.textContent = '🌖';
+                    moonImpactText.textContent = 'Убывающая луна: снижающаяся активность';
+                    moonFactor = 1.0;
+                } else {
+                    moonPhase = 'dark';
+                    moonIcon.textContent = '🌘';
+                    moonText.textContent = 'Темная луна';
+                    moonImpactIcon.textContent = '🌘';
+                    moonImpactText.textContent = 'Темная луна: непредсказуемая активность';
+                    moonFactor = 0.98;
+                }
+                
+                moonCoefficient.textContent = moonFactor.toFixed(2);
+            }
+            
+            // Prevent zoom on double tap
+            document.addEventListener('dblclick', function(e) {
+                e.preventDefault();
+            }, { passive: false });
+            
+            // Prevent zoom on iOS
+            document.addEventListener('touchstart', function(e) {
+                if (e.touches.length > 1) {
+                    e.preventDefault();
+                }
+            }, { passive: false });
+            
+            // Tab functionality
+            tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabId = tab.getAttribute('data-tab');
+                    
+                    // Deactivate all tabs
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tabContents.forEach(tc => tc.classList.remove('active'));
+                    
+                    // Activate current tab
+                    tab.classList.add('active');
+                    document.getElementById(`${tabId}-tab`).classList.add('active');
+                });
+            });
+            
+            // Update total type when selection changes
+            totalTypeSelect.addEventListener('change', function() {
+                totalType = this.value;
+            });
+            
+            // Prevent default behavior for input fields to avoid system keyboard
+            manualInputs.forEach(input => {
+                if (input.id !== 'manual-total-type') {
+                    input.addEventListener('focus', (e) => {
+                        e.preventDefault();
+                        showCustomKeyboard();
+                        activeInput = input;
+                    });
+                    
+                    input.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        showCustomKeyboard();
+                        activeInput = input;
+                    });
+                    
+                    // Prevent touch events from triggering system keyboard
+                    input.addEventListener('touchstart', (e) => {
+                        e.preventDefault();
+                        showCustomKeyboard();
+                        activeInput = input;
+                    });
+                }
+            });
+            
+            // Function to show custom keyboard
+            function showCustomKeyboard() {
+                customKeyboard.classList.add('visible');
+                
+                // Show/hide special keys based on input type
+                const dotKey = document.querySelector('.keyboard-key[data-value="."]');
+                const colonKey = document.querySelector('.keyboard-key[data-value=":"]');
+                const minusKey = document.querySelector('.keyboard-key[data-value="-"]');
+                const plusKey = document.querySelector('.keyboard-key[data-value="+"]');
+                
+                // Reset all keys visibility
+                dotKey.style.display = 'flex';
+                colonKey.style.display = 'flex';
+                minusKey.style.display = 'flex';
+                plusKey.style.display = 'flex';
+                
+                if (activeInput) {
+                    if (activeInput.id === 'manual-total') {
+                        // For total input, show only dot
+                        colonKey.style.display = 'none';
+                        minusKey.style.display = 'none';
+                        plusKey.style.display = 'none';
+                    } else if (activeInput.id === 'manual-handicap') {
+                        // For handicap input, show minus and plus
+                        colonKey.style.display = 'none';
+                        dotKey.style.display = 'flex'; // Allow decimal points for handicap
+                    } else if (activeInput.id === 'manual-score' || activeInput.id === 'manual-time') {
+                        // For score and time inputs, show colon
+                        dotKey.style.display = 'none';
+                        minusKey.style.display = 'none';
+                        plusKey.style.display = 'none';
+                    }
+                }
+            }
+            
+            // Function to hide custom keyboard
+            function hideCustomKeyboard() {
+                customKeyboard.classList.remove('visible');
+                activeInput = null;
+            }
+            
+            // Keyboard button clicks
+            document.querySelectorAll('.keyboard-key').forEach(key => {
+                key.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    if (!activeInput) return;
+                    
+                    const value = this.getAttribute('data-value');
+                    const action = this.getAttribute('data-action');
+                    
+                    if (action === 'backspace') {
+                        activeInput.value = activeInput.value.slice(0, -1);
+                    } else if (action === 'close') {
+                        hideCustomKeyboard();
+                    } else if (value) {
+                        // Allow only valid input for each field
+                        if (activeInput.id === 'manual-total' && value === '.') {
+                            // Allow only one decimal point for total
+                            if (!activeInput.value.includes('.')) {
+                                activeInput.value += value;
+                            }
+                        } else if (activeInput.id === 'manual-handicap' && (value === '-' || value === '+')) {
+                            // Allow minus/plus only at the beginning for handicap
+                            if (activeInput.value === '') {
+                                activeInput.value += value;
+                            }
+                        } else if (activeInput.id === 'manual-handicap' && value === '.') {
+                            // Allow decimal point for handicap
+                            if (!activeInput.value.includes('.')) {
+                                activeInput.value += value;
+                            }
+                        } else if ((activeInput.id === 'manual-score' || activeInput.id === 'manual-time') && value === ':') {
+                            // Allow only one colon for score and time
+                            if (!activeInput.value.includes(':')) {
+                                activeInput.value += value;
+                            }
+                        } else if (value !== ':' && value !== '-' && value !== '+' && value !== '.') {
+                            // Allow numbers in all cases
+                            activeInput.value += value;
+                        }
+                    }
+                });
+                
+                // Prevent double tap zoom on keyboard keys
+                key.addEventListener('dblclick', (e) => {
+                    e.preventDefault();
+                });
+            });
+            
+            // Close keyboard when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.custom-keyboard') && !e.target.closest('.input-field')) {
+                    hideCustomKeyboard();
+                }
+            });
+            
+            // Clear button functionality
+            clearBtn.addEventListener('click', () => {
+                manualInputs.forEach(input => {
+                    input.value = '';
+                });
+                totalTypeSelect.value = 'over';
+                totalType = 'over';
+                
+                // Сброс счета по четвертям
+                resetQuarterScores();
+                
+                // Сброс отображения усталости
+                fatigueOptionsDisplay.forEach(option => {
+                    option.classList.remove('active', 'optimal');
+                });
+                optimalResult.style.display = 'none';
+                fatigueComparison.style.display = 'none';
+                
+                document.getElementById('ocr-score').textContent = '--';
+                document.getElementById('ocr-period').textContent = '--';
+                document.getElementById('ocr-time').textContent = '--';
+                document.getElementById('ocr-time-remaining').textContent = '--';
+                document.getElementById('ocr-total').textContent = '--';
+                document.getElementById('ocr-total-type').textContent = '--';
+                document.getElementById('ocr-handicap').textContent = '--';
+                
+                document.getElementById('predicted-total').textContent = '--';
+                document.getElementById('predicted-pace').textContent = '--';
+                document.getElementById('predicted-score').textContent = '--';
+                
+                // Сброс блока сравнения прогнозов
+                predictionAccuracy.textContent = '--';
+                comparisonContainer.style.display = 'none';
+                accuracyIndicator.style.display = 'none';
+                indicatorExplanation.style.display = 'none';
+                
+                document.getElementById('recommendation-text').textContent = 'Загрузите скриншот или введите данные';
+                document.getElementById('confidence-bar').style.width = '0%';
+                document.getElementById('confidence-value').textContent = '0%';
+                
+                document.getElementById('current-pace').textContent = '--';
+                document.getElementById('league-pace').textContent = '--';
+                document.getElementById('match-progress').textContent = '--';
+                document.getElementById('offensive-efficiency').textContent = '--';
+                document.getElementById('team1-ppg').textContent = '--';
+                document.getElementById('team2-ppg').textContent = '--';
+                document.getElementById('total-analysis').textContent = 'Загрузите скриншот для анализа';
+                document.getElementById('analysis-confidence-bar').style.width = '0%';
+                document.getElementById('analysis-confidence-value').textContent = '0%';
+                
+                // Сброс прогноза по четвертям
+                q2Prediction.textContent = '--';
+                q3Prediction.textContent = '--';
+                q2Details.textContent = 'ТБ/ТМ: --';
+                q3Details.textContent = 'ТБ/ТМ: --';
+                genderImpact.textContent = '--';
+                q2Historical.textContent = '--';
+                q3Historical.textContent = '--';
+                quartersRecommendation.textContent = 'Загрузите данные для получения рекомендаций по ставкам на четверти';
+                quartersConfidenceBar.style.width = '0%';
+                quartersConfidenceValue.textContent = '0%';
+                
+                // Сброс факторов влияния
+                dayFactorValue.textContent = '--';
+                fatigueFactorValue.textContent = '--';
+                genderFactorValue.textContent = '--';
+                moonFactorValue.textContent = '--';
+                totalFactorValue.textContent = '--';
+                factorsAnalysis.textContent = 'Загрузите данные для анализа факторов влияния';
+                factorsConfidenceBar.style.width = '0%';
+                factorsConfidenceValue.textContent = '0%';
+                dayImpactContainer.innerHTML = '';
+                
+                previewImg.style.display = 'none';
+                progressBar.style.display = 'none';
+                statusMessage.innerHTML = '';
+            });
+            
+            // Функция сброса счета по четвертям
+            function resetQuarterScores() {
+                team1Name.textContent = 'Команда 1';
+                team2Name.textContent = 'Команда 2';
+                team1StatsName.textContent = 'Команда 1 (PPG)';
+                team2StatsName.textContent = 'Команда 2 (PPG)';
+                
+                team1Q1.textContent = '-';
+                team1Q2.textContent = '-';
+                team1Q3.textContent = '-';
+                team1Q4.textContent = '-';
+                team1Total.textContent = '0';
+                
+                team2Q1.textContent = '-';
+                team2Q2.textContent = '-';
+                team2Q3.textContent = '-';
+                team2Q4.textContent = '-';
+                team2Total.textContent = '0';
+            }
+            
+            // Theme toggle functionality
+            themeToggle.addEventListener('click', function() {
+                isDarkTheme = !isDarkTheme;
+                if (isDarkTheme) {
+                    document.body.setAttribute('data-theme', 'dark');
+                    themeToggle.textContent = '☀️';
+                } else {
+                    document.body.removeAttribute('data-theme');
+                    themeToggle.textContent = '🌙';
+                }
+                localStorage.setItem('darkTheme', isDarkTheme);
+            });
+            
+            // Обработчики для загрузки изображения
+            uploadArea.addEventListener('click', () => fileInput.click());
+            uploadBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                fileInput.click();
+            });
+            
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('drag-over');
+            });
+            
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('drag-over');
+            });
+            
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('drag-over');
+                
+                if (e.dataTransfer.files.length) {
+                    processImage(e.dataTransfer.files[0]);
+                }
+            });
+            
+            fileInput.addEventListener('change', () => {
+                if (fileInput.files.length) {
+                    processImage(fileInput.files[0]);
+                }
+            });
+            
+            // Обработчик для ручного ввода
+            manualSubmit.addEventListener('click', () => {
+                processManualInput();
+            });
+            
+            function showStatus(message, type) {
+                statusMessage.innerHTML = `<div class="status-message status-${type}">${message}</div>`;
+            }
+            
+            function updateProgress(percent) {
+                progressBar.style.display = 'block';
+                progressFill.style.width = `${percent}%`;
+            }
+            
+            // Функция для получения параметров лиги
+            function getLeagueParams() {
+                const leagueValue = leagueSelect.value;
+                let periodLength, totalPeriods, overtimeLength;
+                
+                switch(leagueValue) {
+                    case '12_4': // NBA
+                        periodLength = 12;
+                        totalPeriods = 4;
+                        overtimeLength = 5;
+                        break;
+                    case '10_4': // ФИБА
+                        periodLength = 10;
+                        totalPeriods = 4;
+                        overtimeLength = 5;
+                        break;
+                    case '12_4_3x3': // 3×3 (4×12 мин)
+                        periodLength = 12;
+                        totalPeriods = 4;
+                        overtimeLength = 2;
+                        break;
+                    case '10_4_3x3': // 3×3 (4×10 мин)
+                        periodLength = 10;
+                        totalPeriods = 4;
+                        overtimeLength = 2;
+                        break;
+                    case '10_2_4x4': // 4×4 (2×10 мин)
+                        periodLength = 10;
+                        totalPeriods = 2;
+                        overtimeLength = 3;
+                        break;
+                    case '5_4_cyber': // Кибербаскетбол
+                        periodLength = 5;
+                        totalPeriods = 4;
+                        overtimeLength = 2;
+                        break;
+                    default:
+                        periodLength = 10;
+                        totalPeriods = 4;
+                        overtimeLength = 5;
+                }
+                
+                return {
+                    periodLength,
+                    totalPeriods,
+                    overtimeLength,
+                    leaguePace: leaguePaceData[leagueValue] || 1.7,
+                    quarterPace: quarterPaceData[leagueValue] || { q1: 45, q2: 47, q3: 44, q4: 46 }
+                };
+            }
+            
+            // НОВАЯ ФУНКЦИЯ: Сканирование всех вариантов усталости
+            async function scanAllFatigueOptions(score1, score2, period, timeElapsed, totalLine, handicapLine, totalType) {
+                fatigueScanResults = [];
+                optimalFatigue = null;
+                
+                // Показываем overlay сканирования
+                scanningOverlay.style.display = 'flex';
+                scanningText.textContent = 'Начинаем сканирование всех вариантов усталости...';
+                scanningProgressBar.style.width = '0%';
+                
+                // Создаем шаги сканирования
+                scanningSteps.innerHTML = '';
+                const fatigueKeys = Object.keys(fatigueFactors);
+                
+                fatigueKeys.forEach((fatigueKey, index) => {
+                    const step = document.createElement('div');
+                    step.className = 'scanning-step';
+                    step.textContent = fatigueFactors[fatigueKey].name;
+                    step.id = `scan-step-${fatigueKey}`;
+                    scanningSteps.appendChild(step);
+                });
+                
+                // Сканируем каждый вариант
+                for (let i = 0; i < fatigueKeys.length; i++) {
+                    const fatigueKey = fatigueKeys[i];
+                    const stepElement = document.getElementById(`scan-step-${fatigueKey}`);
+                    
+                    // Обновляем прогресс
+                    scanningProgressBar.style.width = `${(i / fatigueKeys.length) * 100}%`;
+                    scanningText.textContent = `Анализируем: ${fatigueFactors[fatigueKey].name}...`;
+                    stepElement.classList.add('active');
+                    
+                    // Ждем немного для визуального эффекта
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    
+                    // Рассчитываем прогноз для этого варианта усталости
+                    const prediction = calculatePrediction(score1, score2, period, timeElapsed, totalLine, handicapLine, totalType, fatigueKey);
+                    
+                    // Сохраняем результат
+                    fatigueScanResults.push({
+                        fatigueKey: fatigueKey,
+                        fatigueName: fatigueFactors[fatigueKey].name,
+                        factor: fatigueFactors[fatigueKey].factor,
+                        effect: fatigueFactors[fatigueKey].effect,
+                        predictedTotal: Math.round(prediction.predictedTotalPoints),
+                        predictedScore: Math.round(prediction.predictedScore1) + Math.round(prediction.predictedScore2),
+                        difference: prediction.difference,
+                        confidence: prediction.confidence
+                    });
+                    
+                    // Помечаем шаг как выполненный
+                    stepElement.classList.remove('active');
+                    stepElement.classList.add('completed');
+                }
+                
+                // Завершаем сканирование
+                scanningProgressBar.style.width = '100%';
+                scanningText.textContent = 'Сканирование завершено! Находим оптимальный вариант...';
+                
+                // Ждем немного
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Находим оптимальный вариант (минимальное расхождение)
+                let minDifference = Infinity;
+                fatigueScanResults.forEach(result => {
+                    if (result.difference < minDifference) {
+                        minDifference = result.difference;
+                        optimalFatigue = result.fatigueKey;
+                    }
+                });
+                
+                // Скрываем overlay
+                scanningOverlay.style.display = 'none';
+                
+                return {
+                    optimalFatigue: optimalFatigue,
+                    results: fatigueScanResults
+                };
+            }
+            
+            // НОВАЯ ФУНКЦИЯ: Расчет прогноза для конкретной усталости
+            function calculatePrediction(score1, score2, period, timeElapsed, totalLine, handicapLine, totalType, fatigueKey) {
+                const leagueParams = getLeagueParams();
+                const periodLength = leagueParams.periodLength;
+                const totalPeriods = leagueParams.totalPeriods;
+                const overtimeLength = leagueParams.overtimeLength;
+                
+                // Парсим прошедшее время в четверти
+                const [minutesElapsed, secondsElapsed] = timeElapsed.split(':').map(Number);
+                const totalSecondsElapsed = minutesElapsed * 60 + secondsElapsed;
+                const totalSecondsInPeriod = periodLength * 60;
+                
+                // Расчет прошедшего и оставшегося времени в матче
+                const totalSecondsPlayed = (period - 1) * totalSecondsInPeriod + totalSecondsElapsed;
+                const totalSecondsInGame = totalPeriods * totalSecondsInPeriod;
+                const totalSecondsRemainingInGame = totalSecondsInGame - totalSecondsPlayed;
+                
+                // Расчет текущего темпа игры (очков в минуту)
+                const totalPoints = score1 + score2;
+                const minutesPlayed = totalSecondsPlayed / 60;
+                const pointsPerMinute = minutesPlayed > 0 ? totalPoints / minutesPlayed : 0;
+                
+                // Базовый прогноз тотала на всю игру
+                const minutesRemainingInGame = totalSecondsRemainingInGame / 60;
+                let predictedTotalPoints = totalPoints + (pointsPerMinute * minutesRemainingInGame);
+                
+                // ПРИМЕНЯЕМ ФАКТОРЫ ВЛИЯНИЯ
+                const dayData = dayFactors[currentDay];
+                const fatigueData = fatigueFactors[fatigueKey];
+                const genderFactor = genderFactors[currentGender];
+                
+                // Общий коэффициент влияния
+                const totalInfluenceFactor = dayData.factor * fatigueData.factor * genderFactor * moonFactor;
+                
+                // Применяем коэффициент к прогнозу
+                predictedTotalPoints *= totalInfluenceFactor;
+                
+                // Прогноз счета
+                const team1Share = totalPoints > 0 ? score1 / totalPoints : 0.5;
+                const team2Share = totalPoints > 0 ? score2 / totalPoints : 0.5;
+                
+                const predictedScore1 = score1 + (pointsPerMinute * minutesRemainingInGame * team1Share * totalInfluenceFactor);
+                const predictedScore2 = score2 + (pointsPerMinute * minutesRemainingInGame * team2Share * totalInfluenceFactor);
+                
+                // Расчет расхождения
+                const predictedScoreSum = Math.round(predictedScore1) + Math.round(predictedScore2);
+                const totalPrediction = Math.round(predictedTotalPoints);
+                const difference = Math.abs(predictedScoreSum - totalPrediction);
+                
+                // Расчет уверенности
+                let confidence = 0;
+                if (totalType === 'over') {
+                    if (predictedTotalPoints > totalLine) {
+                        confidence = 75;
+                    } else {
+                        confidence = 65;
+                    }
+                } else if (totalType === 'under') {
+                    if (predictedTotalPoints < totalLine) {
+                        confidence = 75;
+                    } else {
+                        confidence = 65;
+                    }
+                }
+                
+                // Учет индикатора точности
+                if (difference < 5) {
+                    confidence += 10;
+                } else {
+                    confidence -= 5;
+                }
+                
+                confidence = Math.min(95, Math.max(50, confidence));
+                
+                return {
+                    predictedTotalPoints: predictedTotalPoints,
+                    predictedScore1: predictedScore1,
+                    predictedScore2: predictedScore2,
+                    pointsPerMinute: pointsPerMinute,
+                    totalInfluenceFactor: totalInfluenceFactor,
+                    difference: difference,
+                    confidence: confidence,
+                    fatigueData: fatigueData,
+                    dayData: dayData,
+                    genderFactor: genderFactor
+                };
+            }
+            
+            function processImage(file) {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    previewImg.src = e.target.result;
+                    previewImg.style.display = 'block';
+                    
+                    // Показываем индикатор загрузки
+                    document.getElementById('ocr-score').innerHTML = '<span class="loading"></span>';
+                    document.getElementById('ocr-period').innerHTML = '<span class="loading"></span>';
+                    document.getElementById('ocr-time').innerHTML = '<span class="loading"></span>';
+                    document.getElementById('ocr-time-remaining').innerHTML = '<span class="loading"></span>';
+                    document.getElementById('ocr-total').innerHTML = '<span class="loading"></span>';
+                    document.getElementById('ocr-total-type').innerHTML = '<span class="loading"></span>';
+                    document.getElementById('ocr-handicap').innerHTML = '<span class="loading"></span>';
+                    
+                    // Сброс счета по четвертям перед новым распознаванием
+                    resetQuarterScores();
+                    
+                    showStatus('Начинаем распознавание текста...', 'success');
+                    updateProgress(10);
+                    
+                    // Запускаем распознавание текста с помощью Tesseract
+                    Tesseract.recognize(
+                        file,
+                        'rus+eng',
+                        { 
+                            logger: m => {
+                                if (m.status === 'recognizing text') {
+                                    const progress = Math.round(m.progress * 100);
+                                    updateProgress(10 + progress * 0.8);
+                                    debugInfo.style.display = 'block';
+                                    debugText.innerHTML += `Распознавание: ${progress}%<br>`;
+                                }
+                            }
+                        }
+                    ).then(({ data: { text } }) => {
+                        updateProgress(95);
+                        debugText.innerHTML += `Распознанный текст:<br><textarea rows="5" style="width:100%">${text}</textarea><br>`;
+                        showStatus('Текст распознан, анализируем данные...', 'success');
+                        processOCRText(text);
+                        updateProgress(100);
+                        setTimeout(() => {
+                            progressBar.style.display = 'none';
+                            showStatus('Анализ завершен!', 'success');
+                        }, 500);
+                    }).catch(err => {
+                        showStatus('Ошибка при распознавании текста: ' + err.message, 'error');
+                        updateProgress(0);
+                    });
+                };
+                
+                reader.readAsDataURL(file);
+            }
+            
+            // УЛУЧШЕННАЯ ФУНКЦИЯ для поиска периода и времени
+            function findPeriodAndTime(text) {
+                // Разные форматы времени и периода
+                const patterns = [
+                    /(\d{1,2}:\d{2})\s*[\(].*?[|]\s*(\d+)-я (?:четверть|период|тайм)\s*,\s*(\d{1,2}:\d{2})[\)]/i,
+                    /(\d{1,2}:\d{2})\s*[|]\s*(\d+)-я (?:четверть|период|тайм)\s*,\s*(\d{1,2}:\d{2})/i,
+                    /(\d+)-я (?:четверть|период|тайм)\s*[,\s]*(\d{1,2}:\d{2})/i,
+                    /(\d+)-я (?:четверть|период|тайм)/i,
+                    /(\d{1,2}:\d{2})\s*[|]/
+                ];
+                
+                for (let pattern of patterns) {
+                    const match = text.match(pattern);
+                    if (match) {
+                        return match;
+                    }
+                }
+                return null;
+            }
+            
+            // УЛУЧШЕННАЯ ФУНКЦИЯ извлечения счета
+            function extractScoreFromLines(lines) {
+                let team1Name = 'Команда 1';
+                let team2Name = 'Команда 2';
+                let team1Scores = [0, 0, 0, 0];
+                let team2Scores = [0, 0, 0, 0];
+                let team1Total = 0;
+                let team2Total = 0;
+                let team1Found = false;
+                let team2Found = false;
+                
+                debugText.innerHTML += '=== НАЧАЛО АНАЛИЗА СЧЕТА ===<br>';
+                
+                // Ищем строки с названиями команд и очками
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (line.length < 3) continue; // Пропускаем пустые строки
+                    
+                    debugText.innerHTML += `Анализ строки ${i}: "${line}"<br>`;
+                    
+                    // Улучшенный поиск паттерна: название команды + цифры (очки по четвертям + общий счет)
+                    // Паттерн: текст (название команды) затем несколько чисел разделенных пробелами
+                    const scorePattern = /([^\d]+?)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)$/;
+                    const match = line.match(scorePattern);
+                    
+                    if (match) {
+                        debugText.innerHTML += `Найден паттерн счета: ${match[0]}<br>`;
+                        
+                        const name = match[1].trim();
+                        const scores = match.slice(2, 7).map(Number); // 5 чисел: 4 четверти + общий
+                        
+                        if (!team1Found) {
+                            team1Name = name;
+                            team1Scores = scores.slice(0, 4); // Первые 4 числа - очки по четвертям
+                            team1Total = scores[4]; // Последнее число - общий счет
+                            team1Found = true;
+                            debugText.innerHTML += `Найдена команда 1: ${team1Name}, счет: ${team1Scores.join('-')}, всего: ${team1Total}<br>`;
+                        } else if (!team2Found) {
+                            team2Name = name;
+                            team2Scores = scores.slice(0, 4);
+                            team2Total = scores[4];
+                            team2Found = true;
+                            debugText.innerHTML += `Найдена команда 2: ${team2Name}, счет: ${team2Scores.join('-')}, всего: ${team2Total}<br>`;
+                            break; // Нашли обе команды
+                        }
+                    }
+                    
+                    // Альтернативный поиск для формата с разделителями
+                    if (!team1Found || !team2Found) {
+                        // Ищем строки, содержащие несколько чисел подряд (4-5 чисел)
+                        const numbers = line.match(/\b\d{1,3}\b/g);
+                        if (numbers && numbers.length >= 4) {
+                            const scores = numbers.map(Number);
+                            debugText.innerHTML += `Найдены числа: ${scores.join(', ')}<br>`;
+                            
+                            // Проверяем, есть ли в строке текст перед числами (название команды)
+                            const textBeforeNumbers = line.substring(0, line.indexOf(numbers[0])).trim();
+                            
+                            if (textBeforeNumbers && textBeforeNumbers.length > 1) {
+                                if (!team1Found) {
+                                    team1Name = textBeforeNumbers;
+                                    team1Scores = scores.length >= 5 ? scores.slice(0, 4) : scores.slice(0, 4);
+                                    team1Total = scores.length >= 5 ? scores[4] : scores.slice(0, 4).reduce((a, b) => a + b, 0);
+                                    team1Found = true;
+                                    debugText.innerHTML += `Альтернативный поиск - Команда 1: ${team1Name}, счет: ${team1Scores.join('-')}, всего: ${team1Total}<br>`;
+                                } else if (!team2Found) {
+                                    team2Name = textBeforeNumbers;
+                                    team2Scores = scores.length >= 5 ? scores.slice(0, 4) : scores.slice(0, 4);
+                                    team2Total = scores.length >= 5 ? scores[4] : scores.slice(0, 4).reduce((a, b) => a + b, 0);
+                                    team2Found = true;
+                                    debugText.innerHTML += `Альтернативный поиск - Команда 2: ${team2Name}, счет: ${team2Scores.join('-')}, всего: ${team2Total}<br>`;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // Если не нашли команды через паттерны, используем резервный метод
+                if (!team1Found || !team2Found) {
+                    debugText.innerHTML += 'Используем резервный поиск команд<br>';
+                    let scoreLines = [];
+                    
+                    for (let i = 0; i < lines.length; i++) {
+                        const line = lines[i].trim();
+                        const numbers = line.match(/\b\d{1,3}\b/g);
+                        if (numbers && numbers.length >= 4) {
+                            scoreLines.push({line: line, numbers: numbers.map(Number), index: i});
+                        }
+                    }
+                    
+                    if (scoreLines.length >= 2) {
+                        // Первая строка с числами - первая команда
+                        const firstNumbers = scoreLines[0].numbers;
+                        team1Scores = firstNumbers.length >= 5 ? firstNumbers.slice(0, 4) : firstNumbers.slice(0, 4);
+                        team1Total = firstNumbers.length >= 5 ? firstNumbers[4] : firstNumbers.slice(0, 4).reduce((a, b) => a + b, 0);
+                        
+                        // Вторая строка с числами - вторая команда
+                        const secondNumbers = scoreLines[1].numbers;
+                        team2Scores = secondNumbers.length >= 5 ? secondNumbers.slice(0, 4) : secondNumbers.slice(0, 4);
+                        team2Total = secondNumbers.length >= 5 ? secondNumbers[4] : secondNumbers.slice(0, 4).reduce((a, b) => a + b, 0);
+                        
+                        // Пытаемся найти названия команд выше строк с числами
+                        for (let i = scoreLines[0].index - 1; i >= 0; i--) {
+                            const potentialName = lines[i].trim();
+                            if (potentialName && potentialName.length > 2 && !potentialName.match(/\d/)) {
+                                team1Name = potentialName;
+                                break;
+                            }
+                        }
+                        
+                        for (let i = scoreLines[1].index - 1; i >= 0; i--) {
+                            const potentialName = lines[i].trim();
+                            if (potentialName && potentialName.length > 2 && !potentialName.match(/\d/)) {
+                                team2Name = potentialName;
+                                break;
+                            }
+                        }
+                        
+                        team1Found = true;
+                        team2Found = true;
+                    }
+                }
+                
+                debugText.innerHTML += `ИТОГ: ${team1Name} - ${team1Total}, ${team2Name} - ${team2Total}<br>`;
+                debugText.innerHTML += '=== КОНЕЦ АНАЛИЗА СЧЕТА ===<br>';
+                
+                // Обновляем интерфейс с данными о четвертях
+                updateQuarterScores(team1Name, team2Name, team1Scores, team2Scores, team1Total, team2Total);
+                
+                return {
+                    team1Total: team1Total,
+                    team2Total: team2Total,
+                    teamNames: [team1Name, team2Name]
+                };
+            }
+            
+            // Исправленная функция calculateRemainingTime
+            function calculateRemainingTime(period, timeElapsed) {
+                try {
+                    const leagueParams = getLeagueParams();
+                    const periodLength = leagueParams.periodLength;
+                    const totalPeriods = leagueParams.totalPeriods;
+                    
+                    // Проверяем корректность периода
+                    if (period < 1 || period > totalPeriods) {
+                        document.getElementById('ocr-time-remaining').textContent = '--';
+                        return;
+                    }
+                    
+                    // Проверяем формат времени
+                    if (!timeElapsed || !timeElapsed.includes(':')) {
+                        document.getElementById('ocr-time-remaining').textContent = '--';
+                        return;
+                    }
+                    
+                    const [minutesElapsed, secondsElapsed] = timeElapsed.split(':').map(Number);
+                    
+                    // Проверяем, что минуты и секунды - числа
+                    if (isNaN(minutesElapsed) || isNaN(secondsElapsed)) {
+                        document.getElementById('ocr-time-remaining').textContent = '--';
+                        return;
+                    }
+                    
+                    const totalSecondsElapsed = minutesElapsed * 60 + secondsElapsed;
+                    const totalSecondsInPeriod = periodLength * 60;
+                    
+                    // Проверяем, чтобы прошедшее время не превышало длительность периода
+                    if (totalSecondsElapsed > totalSecondsInPeriod) {
+                        document.getElementById('ocr-time-remaining').textContent = '00:00';
+                        return;
+                    }
+                    
+                    const totalSecondsRemaining = totalSecondsInPeriod - totalSecondsElapsed;
+                    
+                    const minutesRemaining = Math.floor(totalSecondsRemaining / 60);
+                    const secondsRemaining = totalSecondsRemaining % 60;
+                    
+                    const timeRemainingFormatted = `${minutesRemaining}:${secondsRemaining.toString().padStart(2, '0')}`;
+                    document.getElementById('ocr-time-remaining').textContent = timeRemainingFormatted;
+                } catch (error) {
+                    console.error('Ошибка расчета времени:', error);
+                    document.getElementById('ocr-time-remaining').textContent = '--';
+                }
+            }
+            
+            function processOCRText(text) {
+                // Разделяем текст на строки
+                const lines = text.split('\n').filter(line => line.trim() !== '');
+                
+                debugText.innerHTML += `Всего строк: ${lines.length}<br>`;
+                
+                // Улучшенные регулярные выражения для распознавания данных
+                
+                // 1. Поиск счета по четвертям
+                const scoreData = extractScoreFromLines(lines);
+                let score1 = scoreData.team1Total;
+                let score2 = scoreData.team2Total;
+                teamNames = scoreData.teamNames;
+                
+                // 2. Поиск четверти и времени с использованием новой функции
+                const periodTimeMatch = findPeriodAndTime(text);
+                let periodMatch, timeMatch;
+                
+                // Если не нашли сложный формат, ищем альтернативные
+                if (!periodTimeMatch) {
+                    periodMatch = text.match(/(\d+)-я (?:четверть|период|тайм)/i);
+                    timeMatch = text.match(/(\d{1,2}:\d{2})\s*[|]/);
+                }
+                
+                let period = 1, timeElapsed = "00:00", total = 0, handicap = 0;
+                let detectedTotalType = "under"; // По умолчанию ТМ
+                
+                // Определяем тип тотала
+                if (text.includes('ТБ') || text.includes('Тотал Больше') || text.includes('OVER') || text.includes('Over')) {
+                    detectedTotalType = 'over';
+                } else if (text.includes('ТМ') || text.includes('Тотал Меньше') || text.includes('UNDER') || text.includes('Under')) {
+                    detectedTotalType = 'under';
+                }
+                
+                // Проверяем на кибербаскетбол
+                const isCyberBasketball = text.includes('Кибербаскетбол') || text.includes('NBA 2K') || text.includes('ESportsBattle');
+                if (isCyberBasketball) {
+                    debugText.innerHTML += 'Обнаружен матч кибербаскетбола<br>';
+                    // Устанавливаем лигу кибербаскетбола
+                    document.getElementById('league-select').value = '5_4_cyber';
+                }
+                
+                debugText.innerHTML += `Найдены данные: счет=${score1 && score2 ? 'да' : 'нет'}, четверть/время=${periodTimeMatch ? 'да' : 'нет'}<br>`;
+                
+                // Обрабатываем период и время
+                if (periodTimeMatch) {
+                    // Формат: xx:xx (время начала игры | x-я четверть, xx:xx)
+                    if (periodTimeMatch.length >= 4) {
+                        // Сложный формат с временем начала игры
+                        period = parseInt(periodTimeMatch[2]);
+                        timeElapsed = periodTimeMatch[3];
+                    } else {
+                        // Простой формат: x-я четверть, xx:xx
+                        period = parseInt(periodTimeMatch[1]);
+                        timeElapsed = periodTimeMatch[2];
+                    }
+                    
+                    document.getElementById('ocr-period').textContent = `${period} период`;
+                    document.getElementById('manual-period').value = period;
+                    document.getElementById('ocr-time').textContent = timeElapsed;
+                    document.getElementById('manual-time').value = timeElapsed;
+                    
+                    // Рассчитываем оставшееся время
+                    calculateRemainingTime(period, timeElapsed);
+                } else if (periodMatch || timeMatch) {
+                    // Если нашли отдельно четверть и время
+                    if (periodMatch) {
+                        period = parseInt(periodMatch[1]);
+                        document.getElementById('ocr-period').textContent = `${period} период`;
+                        document.getElementById('manual-period').value = period;
+                    }
+                    
+                    if (timeMatch) {
+                        timeElapsed = timeMatch[1];
+                        document.getElementById('ocr-time').textContent = timeElapsed;
+                        document.getElementById('manual-time').value = timeElapsed;
+                        
+                        // Рассчитываем оставшееся время
+                        calculateRemainingTime(period, timeElapsed);
+                    }
+                }
+                
+                // 3. Поиск тотала
+                const totalRegex = /Т[М]\s*[\(]?\s*([\d.,]+)\s*[\)]?/i;
+                const alternativeTotalRegex = /Т[О0]?[ТT]?[АA]?[ЛJ]?[^0-9]{0,20}?([\d.,]+)/i;
+                let totalMatch = text.match(totalRegex);
+                if (!totalMatch) totalMatch = text.match(alternativeTotalRegex);
+                
+                // 4. Поиск форы
+                const handicapRegex = /Ф[12]\s*[\(]([+-]?[\d.,]+)[\)]/i;
+                const alternativeHandicapRegex = /(?:Ф1|Ф2|F1|F2)[\s\S]{0,15}?([+-]?[\d.,]+)/i;
+                let handicapMatch = text.match(handicapRegex);
+                if (!handicapMatch) handicapMatch = text.match(alternativeHandicapRegex);
+                
+                // Обрабатываем тотал
+                if (totalMatch) {
+                    total = parseFloat(totalMatch[1].replace(',', '.'));
+                    document.getElementById('ocr-total').textContent = total;
+                    document.getElementById('manual-total').value = total;
+                    
+                    // Отображаем тип тотала
+                    const totalTypeText = detectedTotalType === 'over' ? 'ТБ' : 'ТМ';
+                    const totalTypeClass = detectedTotalType === 'over' ? 'over' : 'under';
+                    document.getElementById('ocr-total-type').innerHTML = total ? `<span class="total-type ${totalTypeClass}">${totalTypeText}</span>` : '--';
+                    
+                    // Устанавливаем тип тотала в ручном вводе
+                    document.getElementById('manual-total-type').value = detectedTotalType;
+                    totalType = detectedTotalType;
+                }
+                
+                // Обрабатываем фору
+                if (handicapMatch) {
+                    handicap = parseFloat(handicapMatch[1].replace(',', '.'));
+                    document.getElementById('ocr-handicap').textContent = handicap;
+                    document.getElementById('manual-handicap').value = handicap;
+                }
+                
+                // Отображаем общий счет
+                if (score1 !== null && score2 !== null) {
+                    document.getElementById('ocr-score').textContent = `${score1}:${score2}`;
+                    document.getElementById('manual-score').value = `${score1}:${score2}`;
+                }
+                
+                // Переключаемся на вкладку результатов
+                tabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(tc => tc.classList.remove('active'));
+                document.querySelector('[data-tab="results"]').classList.add('active');
+                document.getElementById('results-tab').classList.add('active');
+                
+                // Запускаем полный анализ с автоматическим поиском усталости
+                analyzeWithAutoFatigue(score1, score2, period, timeElapsed, total, handicap, detectedTotalType);
+            }
+            
+            // Функция обновления интерфейса счета по четвертям
+            function updateQuarterScores(team1Name, team2Name, team1Scores, team2Scores, team1Total, team2Total) {
+                // Обновляем названия команд
+                document.getElementById('team1-name').textContent = team1Name;
+                document.getElementById('team2-name').textContent = team2Name;
+                document.getElementById('team1-stats-name').textContent = `${team1Name} (PPG)`;
+                document.getElementById('team2-stats-name').textContent = `${team2Name} (PPG)`;
+                
+                // Обновляем очки по четвертям для команды 1
+                document.getElementById('team1-q1').textContent = team1Scores[0] || '-';
+                document.getElementById('team1-q2').textContent = team1Scores[1] || '-';
+                document.getElementById('team1-q3').textContent = team1Scores[2] || '-';
+                document.getElementById('team1-q4').textContent = team1Scores[3] || '-';
+                document.getElementById('team1-total').textContent = team1Total;
+                
+                // Обновляем очки по четвертям для команды 2
+                document.getElementById('team2-q1').textContent = team2Scores[0] || '-';
+                document.getElementById('team2-q2').textContent = team2Scores[1] || '-';
+                document.getElementById('team2-q3').textContent = team2Scores[2] || '-';
+                document.getElementById('team2-q4').textContent = team2Scores[3] || '-';
+                document.getElementById('team2-total').textContent = team2Total;
+            }
+            
+            // НОВАЯ ФУНКЦИЯ: Анализ с автоматическим поиском усталости
+            async function analyzeWithAutoFatigue(score1, score2, period, timeElapsed, totalInput, handicapInput, totalTypeInput) {
+                // Сканируем все варианты усталости
+                const scanResult = await scanAllFatigueOptions(score1, score2, period, timeElapsed, totalInput, handicapInput, totalTypeInput);
+                
+                // Используем оптимальную усталость для расчетов
+                currentFatigue = scanResult.optimalFatigue;
+                const optimalResultData = fatigueScanResults.find(r => r.fatigueKey === currentFatigue);
+                
+                // Обновляем отображение усталости
+                updateFatigueDisplay(currentFatigue);
+                
+                // Отображаем оптимальный результат
+                optimalResult.style.display = 'block';
+                optimalDetails.textContent = `Оптимальный вариант: ${fatigueFactors[currentFatigue].name} (разница: ${optimalResultData.difference} очков)`;
+                
+                // Обновляем таблицу сравнения
+                updateFatigueComparisonTable();
+                
+                // Генерируем прогноз с оптимальной усталостью
+                generatePredictions(score1, score2, period, timeElapsed, totalInput, handicapInput, totalTypeInput);
+                
+                // Обновляем статистику
+                updateStatistics(score1, score2, period, timeElapsed, totalInput, handicapInput, totalTypeInput);
+                
+                // Генерируем прогноз по четвертям
+                generateQuarterPredictions(score1, score2, period, timeElapsed);
+                
+                // Обновляем факторы влияния
+                updateFactorsAnalysis();
+            }
+            
+            // НОВАЯ ФУНКЦИЯ: Обновление отображения усталости
+            function updateFatigueDisplay(fatigueKey) {
+                fatigueOptionsDisplay.forEach(option => {
+                    option.classList.remove('active', 'optimal');
+                    if (option.getAttribute('data-fatigue') === fatigueKey) {
+                        option.classList.add('optimal');
+                    }
+                });
+            }
+            
+            // НОВАЯ ФУНКЦИЯ: Обновление таблицы сравнения усталости
+            function updateFatigueComparisonTable() {
+                fatigueComparisonBody.innerHTML = '';
+                fatigueComparison.style.display = 'block';
+                
+                // Сортируем результаты по разнице (от меньшей к большей)
+                const sortedResults = [...fatigueScanResults].sort((a, b) => a.difference - b.difference);
+                
+                sortedResults.forEach((result, index) => {
+                    const row = document.createElement('tr');
+                    if (result.fatigueKey === optimalFatigue) {
+                        row.className = 'optimal-row';
+                    }
+                    
+                    // Определяем класс для ячейки разницы
+                    let diffClass = '';
+                    if (result.difference < 3) {
+                        diffClass = 'optimal';
+                    } else if (result.difference < 5) {
+                        diffClass = 'good';
+                    } else {
+                        diffClass = 'poor';
+                    }
+                    
+                    row.innerHTML = `
+                        <td>${result.fatigueName}</td>
+                        <td>${result.factor.toFixed(3)} (${result.effect})</td>
+                        <td>${result.predictedScore}</td>
+                        <td>${result.predictedTotal}</td>
+                        <td class="difference-cell ${diffClass}">${result.difference}</td>
+                    `;
+                    
+                    fatigueComparisonBody.appendChild(row);
+                });
+            }
+            
+            function processManualInput() {
+                const scoreInput = document.getElementById('manual-score').value;
+                const periodInput = parseInt(document.getElementById('manual-period').value);
+                const timeInput = document.getElementById('manual-time').value;
+                const totalInputValue = document.getElementById('manual-total').value;
+                const handicapInputValue = document.getElementById('manual-handicap').value;
+                const totalTypeInput = document.getElementById('manual-total-type').value;
+                
+                if (!scoreInput || !periodInput || !timeInput) {
+                    alert('Пожалуйста, заполните все обязательные поля: счет, период и время');
+                    return;
+                }
+                
+                const [score1, score2] = scoreInput.split(':').map(Number);
+                const totalInput = totalInputValue ? parseFloat(totalInputValue) : 0;
+                const handicapInput = handicapInputValue ? parseFloat(handicapInputValue) : 0;
+                
+                document.getElementById('ocr-score').textContent = `${score1}:${score2}`;
+                document.getElementById('ocr-period').textContent = `${periodInput} период`;
+                document.getElementById('ocr-time').textContent = timeInput;
+                
+                // Рассчитываем оставшееся время
+                calculateRemainingTime(periodInput, timeInput);
+                
+                document.getElementById('ocr-total').textContent = totalInput || '--';
+                
+                // Отображаем тип тотала
+                const totalTypeText = totalTypeInput === 'over' ? 'ТБ' : 'ТМ';
+                const totalTypeClass = totalTypeInput === 'over' ? 'over' : 'under';
+                document.getElementById('ocr-total-type').innerHTML = totalInput ? `<span class="total-type ${totalTypeClass}">${totalTypeText}</span>` : '--';
+                
+                document.getElementById('ocr-handicap').textContent = handicapInput || '--';
+                
+                // Переключаемся на вкладку результатов
+                tabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(tc => tc.classList.remove('active'));
+                document.querySelector('[data-tab="results"]').classList.add('active');
+                document.getElementById('results-tab').classList.add('active');
+                
+                // Запускаем полный анализ с автоматическим поиском усталости
+                analyzeWithAutoFatigue(score1, score2, periodInput, timeInput, totalInput, handicapInput, totalTypeInput);
+            }
+            
+            function generatePredictions(score1, score2, period, timeElapsed, totalLine, handicapLine, totalType) {
+                // Используем оптимальную усталость
+                const prediction = calculatePrediction(score1, score2, period, timeElapsed, totalLine, handicapLine, totalType, currentFatigue);
+                
+                // НОВЫЙ РАСЧЕТ: Сравнение прогноза счета и ожидаемого тотала
+                const predictedScoreSum = Math.round(prediction.predictedScore1) + Math.round(prediction.predictedScore2);
+                const totalPrediction = Math.round(prediction.predictedTotalPoints);
+                const difference = prediction.difference;
+                
+                // Определяем индикатор (Joker/Banana)
+                let indicatorType = 'joker';
+                let indicatorMessage = '';
+                let explanation = '';
+                
+                if (difference < 5) {
+                    indicatorType = 'joker';
+                    indicatorMessage = 'Минимальное расхождение. Высокая точность прогноза!';
+                    explanation = 'Расхождение менее 5 очков указывает на высокую согласованность прогнозов. Рекомендуется использовать этот прогноз.';
+                } else {
+                    indicatorType = 'banana';
+                    indicatorMessage = 'Значительное расхождение. Требуется осторожность!';
+                    explanation = 'Расхождение 5 очков и более указывает на низкую согласованность прогнозов. Рекомендуется дополнительный анализ.';
+                }
+                
+                // Формирование рекомендации с учетом типа тотала
+                let recommendation = "";
+                let confidence = prediction.confidence;
+                
+                if (totalType === 'over') {
+                    if (prediction.predictedTotalPoints > totalLine) {
+                        recommendation = `Рекомендуется ставка на ТОТАЛ БОЛЬШЕ ${totalLine}`;
+                    } else {
+                        recommendation = `НЕ рекомендуется ставка на ТОТАЛ БОЛЬШЕ ${totalLine}`;
+                    }
+                } else if (totalType === 'under') {
+                    if (prediction.predictedTotalPoints < totalLine) {
+                        recommendation = `Рекомендуется ставка на ТОТАЛ МЕНЬШЕ ${totalLine}`;
+                    } else {
+                        recommendation = `НЕ рекомендуется ставка на ТОТАЛ МЕНЬШЕ ${totalLine}`;
+                    }
+                }
+                
+                // Учет форы
+                const predictedDifference = prediction.predictedScore1 - prediction.predictedScore2;
+                if (handicapLine && Math.abs(predictedDifference - handicapLine) > 3) {
+                    if (predictedDifference > handicapLine) {
+                        recommendation += ` и ПОБЕДА ${teamNames[0]} с форой ${handicapLine > 0 ? '+' : ''}${handicapLine}`;
+                    } else {
+                        recommendation += ` и ПОБЕДА ${teamNames[1]} с форой ${-handicapLine > 0 ? '+' : ''}${-handicapLine}`;
+                    }
+                    confidence += 5;
+                }
+                
+                // Учет индикатора точности в рекомендации
+                if (indicatorType === 'joker') {
+                    recommendation += ` JOKER: прогноз высокоточный (расхождение: ${difference} очков).`;
+                } else {
+                    recommendation += ` BANANA: прогноз имеет значительное расхождение (${difference} очков).`;
+                }
+                
+                // Учет факторов влияния в рекомендации
+                if (prediction.totalInfluenceFactor > 1.05) {
+                    recommendation += ` Учитывая факторы (день, усталость), ожидается высокая результативность.`;
+                } else if (prediction.totalInfluenceFactor < 0.95) {
+                    recommendation += ` Учитывая факторы (день, усталость), ожидается низкая результативность.`;
+                }
+                
+                // Добавляем информацию об оптимальной усталости
+                recommendation += ` Оптимальная усталость: ${fatigueFactors[currentFatigue].name}.`;
+                
+                confidence = Math.min(95, Math.max(50, confidence));
+                
+                // Обновляем интерфейс с результатами
+                document.getElementById('predicted-total').textContent = Math.round(prediction.predictedTotalPoints);
+                document.getElementById('predicted-pace').textContent = prediction.pointsPerMinute.toFixed(2);
+                document.getElementById('predicted-score').textContent = `${Math.round(prediction.predictedScore1)}:${Math.round(prediction.predictedScore2)}`;
+                
+                // Обновляем блок сравнения прогнозов
+                predictionAccuracy.textContent = `${difference} очков`;
+                
+                // Показываем блок сравнения
+                comparisonContainer.style.display = 'flex';
+                scorePredictionValue.textContent = predictedScoreSum;
+                totalPredictionValue.textContent = totalPrediction;
+                predictionDifference.textContent = difference;
+                predictionDifference.className = `comparison-difference ${difference < 5 ? 'difference-positive' : 'difference-negative'}`;
+                
+                // Обновляем индикатор
+                accuracyIndicator.style.display = 'block';
+                if (indicatorType === 'joker') {
+                    indicatorIcon.textContent = '🃏';
+                    indicatorIcon.className = 'indicator-icon joker-indicator';
+                    indicatorText.textContent = 'JOKER';
+                    indicatorText.className = 'indicator-text joker-text';
+                    accuracyDetails.textContent = indicatorMessage;
+                    accuracyDetails.style.color = 'var(--joker-color)';
+                } else {
+                    indicatorIcon.textContent = '🍌';
+                    indicatorIcon.className = 'indicator-icon banana-indicator';
+                    indicatorText.textContent = 'BANANA';
+                    indicatorText.className = 'indicator-text banana-text';
+                    accuracyDetails.textContent = indicatorMessage;
+                    accuracyDetails.style.color = 'var(--banana-color)';
+                }
+                
+                // Показываем объяснение
+                indicatorExplanation.style.display = 'block';
+                explanationText.textContent = explanation;
+                
+                document.getElementById('recommendation-text').textContent = recommendation;
+                document.getElementById('confidence-bar').style.width = `${confidence}%`;
+                document.getElementById('confidence-value').textContent = `${confidence}%`;
+                
+                debugText.innerHTML += `Прогноз: тотал=${Math.round(prediction.predictedTotalPoints)}, счет=${Math.round(prediction.predictedScore1)}:${Math.round(prediction.predictedScore2)}<br>`;
+                debugText.innerHTML += `Расхождение: ${difference} очков (${indicatorType.toUpperCase()})<br>`;
+                debugText.innerHTML += `Оптимальная усталость: ${fatigueFactors[currentFatigue].name}<br>`;
+                debugText.innerHTML += `Рекомендация: ${recommendation}<br>`;
+            }
+            
+            function generateQuarterPredictions(score1, score2, period, timeElapsed) {
+                const leagueParams = getLeagueParams();
+                const quarterPace = leagueParams.quarterPace;
+                const periodLength = leagueParams.periodLength;
+                
+                // Учет влияния пола команд
+                const genderFactor = genderFactors[currentGender];
+                genderImpact.textContent = `${currentGender === 'male' ? 'Мужчины' : currentGender === 'female' ? 'Женщины' : 'Смешанные'} (×${genderFactor.toFixed(2)})`;
+                
+                // Исторические данные по четвертям
+                q2Historical.textContent = `${quarterPace.q2} очков`;
+                q3Historical.textContent = `${quarterPace.q3} очков`;
+                
+                // ПРИМЕНЯЕМ ФАКТОРЫ ВЛИЯНИЯ ДЛЯ ПРОГНОЗА ЧЕТВЕРТЕЙ
+                const dayData = dayFactors[currentDay];
+                const fatigueData = fatigueFactors[currentFatigue];
+                
+                // Общий коэффициент для четвертей
+                const quarterInfluenceFactor = dayData.factor * fatigueData.factor * genderFactor * moonFactor;
+                
+                // Прогноз для 2-й четверти с учетом текущего темпа и факторов
+                let q2PredictionValue = quarterPace.q2 * quarterInfluenceFactor;
+                
+                // Если матч уже идет, корректируем прогноз на основе текущего темпа
+                if (period >= 1) {
+                    const [minutesElapsed, secondsElapsed] = timeElapsed.split(':').map(Number);
+                    const totalSecondsElapsed = minutesElapsed * 60 + secondsElapsed;
+                    const minutesPlayedInQuarter = totalSecondsElapsed / 60;
+                    
+                    if (period === 1 && minutesPlayedInQuarter > 0) {
+                        const currentQuarterPoints = score1 + score2;
+                        const currentQuarterPace = currentQuarterPoints / minutesPlayedInQuarter;
+                        const quarterMinutes = periodLength;
+                        
+                        // Корректируем прогноз на основе текущего темпа
+                        q2PredictionValue = (q2PredictionValue + (currentQuarterPace * quarterMinutes)) / 2;
+                    }
+                }
+                
+                // Прогноз для 3-й четверти
+                let q3PredictionValue = quarterPace.q3 * quarterInfluenceFactor;
+                
+                // Обновляем интерфейс
+                q2Prediction.textContent = Math.round(q2PredictionValue);
+                q3Prediction.textContent = Math.round(q3PredictionValue);
+                
+                // Определяем рекомендации по ТБ/ТМ для четвертей
+                const q2OverUnder = q2PredictionValue > quarterPace.q2 ? 'ТБ' : 'ТМ';
+                const q3OverUnder = q3PredictionValue > quarterPace.q3 ? 'ТБ' : 'ТМ';
+                
+                q2Details.textContent = `ТБ/ТМ: ${q2OverUnder} (${quarterPace.q2})`;
+                q3Details.textContent = `ТБ/ТМ: ${q3OverUnder} (${quarterPace.q3})`;
+                
+                // Формируем общую рекомендацию по четвертям
+                let quartersRec = "";
+                let quartersConfidence = 75;
+                
+                if (q2OverUnder === 'ТБ' && q3OverUnder === 'ТБ') {
+                    quartersRec = "Рекомендуются ставки на ТБ во 2-й и 3-й четвертях";
+                    quartersConfidence = 80;
+                } else if (q2OverUnder === 'ТМ' && q3OverUnder === 'ТМ') {
+                    quartersRec = "Рекомендуются ставки на ТМ во 2-й и 3-й четвертях";
+                    quartersConfidence = 80;
+                } else {
+                    quartersRec = `Рекомендуется ${q2OverUnder} во 2-й четверти и ${q3OverUnder} в 3-й четверти`;
+                    quartersConfidence = 70;
+                }
+                
+                // Учет факторов влияния в рекомендации
+                if (quarterInfluenceFactor > 1.05) {
+                    quartersRec += `. Факторы (день, усталость) указывают на повышенную результативность.`;
+                    quartersConfidence += 5;
+                } else if (quarterInfluenceFactor < 0.95) {
+                    quartersRec += `. Факторы (день, усталость) указывают на пониженную результативность.`;
+                    quartersConfidence += 5;
+                }
+                
+                // Добавляем информацию об оптимальной усталости
+                quartersRec += ` Оптимальная усталость: ${fatigueData.name}.`;
+                
+                quartersRecommendation.textContent = quartersRec;
+                quartersConfidenceBar.style.width = `${quartersConfidence}%`;
+                quartersConfidenceValue.textContent = `${quartersConfidence}%`;
+            }
+            
+            function updateStatistics(score1, score2, period, timeElapsed, totalLine, handicapLine, totalType) {
+                const leagueParams = getLeagueParams();
+                const periodLength = leagueParams.periodLength;
+                const totalPeriods = leagueParams.totalPeriods;
+                const leaguePace = leagueParams.leaguePace;
+                
+                // Парсим прошедшее время в четверти
+                const [minutesElapsed, secondsElapsed] = timeElapsed.split(':').map(Number);
+                const totalSecondsElapsed = minutesElapsed * 60 + secondsElapsed;
+                const totalSecondsInPeriod = periodLength * 60;
+                
+                // Расчет прошедшего и оставшегося времени в матче
+                const totalSecondsPlayed = (period - 1) * totalSecondsInPeriod + totalSecondsElapsed;
+                const totalSecondsInGame = totalPeriods * totalSecondsInPeriod;
+                
+                // Расчет текущего темпа игры (очков в минуту)
+                const totalPoints = score1 + score2;
+                const minutesPlayed = totalSecondsPlayed / 60;
+                const pointsPerMinute = minutesPlayed > 0 ? totalPoints / minutesPlayed : 0;
+                
+                // Прогресс матча в процентах
+                const matchProgress = Math.round((totalSecondsPlayed / totalSecondsInGame) * 100);
+                
+                // Эффективность атаки (условный расчет)
+                const offensiveEfficiency = (pointsPerMinute / leaguePace * 100).toFixed(1);
+                
+                // PPG (Points Per Game) для команд
+                const team1Ppg = (score1 / minutesPlayed * 40).toFixed(1);
+                const team2Ppg = (score2 / minutesPlayed * 40).toFixed(1);
+                
+                // Анализ тотала
+                let totalAnalysis = "";
+                let analysisConfidence = 0;
+                
+                if (totalLine) {
+                    // Используем оптимальную усталость
+                    const fatigueData = fatigueFactors[currentFatigue];
+                    const totalInfluenceFactor = dayFactors[currentDay].factor * fatigueData.factor * genderFactors[currentGender] * moonFactor;
+                    
+                    const predictedTotal = (totalPoints + (pointsPerMinute * (totalSecondsInGame - totalSecondsPlayed) / 60)) * totalInfluenceFactor;
+                    
+                    if (totalType === 'over') {
+                        if (predictedTotal > totalLine) {
+                            totalAnalysis = `Текущий темп игры (${pointsPerMinute.toFixed(2)} очков/мин) поддерживает ТБ ${totalLine}.`;
+                            analysisConfidence = 75;
+                        } else {
+                            totalAnalysis = `Текущий темп игры (${pointsPerMinute.toFixed(2)} очков/мин) НЕ поддерживает ТБ ${totalLine}.`;
+                            analysisConfidence = 65;
+                        }
+                    } else {
+                        if (predictedTotal < totalLine) {
+                            totalAnalysis = `Текущий темп игры (${pointsPerMinute.toFixed(2)} очков/мин) поддерживает ТМ ${totalLine}.`;
+                            analysisConfidence = 75;
+                        } else {
+                            totalAnalysis = `Текущий темп игры (${pointsPerMinute.toFixed(2)} очков/мин) НЕ поддерживает ТМ ${totalLine}.`;
+                            analysisConfidence = 65;
+                        }
+                    }
+                    
+                    // Добавляем информацию о факторах влияния
+                    totalAnalysis += ` Учет факторов (день, усталость) ${totalInfluenceFactor > 1 ? 'увеличивает' : 'уменьшает'} прогнозируемый тотал на ${Math.abs((totalInfluenceFactor - 1) * 100).toFixed(1)}%.`;
+                    
+                    // Добавляем информацию об оптимальной усталости
+                    totalAnalysis += ` Оптимальная усталость: ${fatigueData.name}.`;
+                }
+                
+                // Обновляем статистику
+                document.getElementById('current-pace').textContent = pointsPerMinute.toFixed(2);
+                document.getElementById('league-pace').textContent = leaguePace.toFixed(2);
+                document.getElementById('match-progress').textContent = matchProgress + "%";
+                document.getElementById('offensive-efficiency').textContent = offensiveEfficiency + "%";
+                document.getElementById('team1-ppg').textContent = team1Ppg;
+                document.getElementById('team2-ppg').textContent = team2Ppg;
+                document.getElementById('total-analysis').textContent = totalAnalysis;
+                document.getElementById('analysis-confidence-bar').style.width = `${analysisConfidence}%`;
+                document.getElementById('analysis-confidence-value').textContent = `${analysisConfidence}%`;
+            }
+            
+            // НОВАЯ ФУНКЦИЯ: Обновление анализа факторов влияния
+            function updateFactorsAnalysis() {
+                const dayData = dayFactors[currentDay];
+                const fatigueData = fatigueFactors[currentFatigue];
+                const genderFactor = genderFactors[currentGender];
+                
+                // Рассчитываем общий коэффициент влияния
+                const totalInfluenceFactor = dayData.factor * fatigueData.factor * genderFactor * moonFactor;
+                const totalInfluencePercent = (totalInfluenceFactor - 1) * 100;
+                
+                // Обновляем значения факторов
+                dayFactorValue.textContent = `${dayData.factor.toFixed(3)} (${dayData.effect})`;
+                fatigueFactorValue.textContent = `${fatigueData.factor.toFixed(3)} (${fatigueData.effect})`;
+                genderFactorValue.textContent = `${genderFactor.toFixed(3)}`;
+                moonFactorValue.textContent = `${moonFactor.toFixed(3)}`;
+                totalFactorValue.textContent = `${totalInfluenceFactor.toFixed(3)} (${totalInfluencePercent > 0 ? '+' : ''}${totalInfluencePercent.toFixed(1)}%)`;
+                
+                // Создаем визуализацию влияния дня недели
+                let dayImpactHTML = '';
+                
+                // Добавляем специальные блоки для выходных и прайм-тайма
+                if (currentDay === 5 || currentDay === 6 || currentDay === 0) {
+                    dayImpactHTML += `<div class="weekend-effect">
+                        <i class="fas fa-star"></i> Выходной день: повышенная результативность ожидается
+                    </div>`;
+                }
+                
+                if (currentDay === 0) {
+                    dayImpactHTML += `<div class="prime-time">
+                        <i class="fas fa-tv"></i> Телевизионный день: максимальная зрительская аудитория
+                    </div>`;
+                }
+                
+                if (currentFatigue === 'tired' || currentFatigue === 'exhausted') {
+                    dayImpactHTML += `<div class="fatigue-warning">
+                        <i class="fas fa-bed"></i> Высокая усталость команд: ожидается снижение результативности
+                    </div>`;
+                }
+                
+                // Добавляем информацию об оптимальной усталости
+                dayImpactHTML += `<div class="optimal-result">
+                    <div class="optimal-title">🎯 Оптимальный вариант усталости: ${fatigueData.name}</div>
+                    <div class="optimal-details">Коэффициент: ${fatigueData.factor.toFixed(3)} (${fatigueData.effect}) | Влияние на тотал: ${fatigueData.effect}</div>
+                </div>`;
+                
+                // Добавляем общую информацию о влиянии дня
+                dayImpactHTML += `<div class="day-impact">
+                    <div class="day-icon"><i class="fas fa-calendar-day"></i></div>
+                    <div class="day-text">${dayData.name}: ${dayData.desc}. Влияние на тотал: <span class="factor-badge ${dayData.effect.includes('+') ? 'positive' : dayData.effect.includes('-') ? 'negative' : 'neutral'}">${dayData.effect}</span></div>
+                </div>`;
+                
+                dayImpactContainer.innerHTML = dayImpactHTML;
+                
+                // Формируем итоговый анализ
+                let factorsAnalysisText = "";
+                let factorsConfidence = 75;
+                
+                if (totalInfluenceFactor > 1.05) {
+                    factorsAnalysisText = `Суммарное влияние факторов указывает на ВЫСОКУЮ результативность матча. Ожидается тотал выше среднего.`;
+                    factorsConfidence = 80;
+                } else if (totalInfluenceFactor < 0.95) {
+                    factorsAnalysisText = `Суммарное влияние факторов указывает на НИЗКУЮ результативность матча. Ожидается тотал ниже среднего.`;
+                    factorsConfidence = 80;
+                } else {
+                    factorsAnalysisText = `Суммарное влияние факторов указывает на СРЕДНЮЮ результативность матча. Ожидается тотал близкий к среднему.`;
+                    factorsConfidence = 70;
+                }
+                
+                // Добавляем детали по каждому фактору
+                factorsAnalysisText += ` Основные влияния: день недели ${dayData.effect}, усталость ${fatigueData.effect}.`;
+                
+                // Добавляем информацию об оптимальной усталости
+                factorsAnalysisText += ` Оптимальный вариант усталости выбран автоматически.`;
+                
+                factorsAnalysis.textContent = factorsAnalysisText;
+                factorsConfidenceBar.style.width = `${factorsConfidence}%`;
+                factorsConfidenceValue.textContent = `${factorsConfidence}%`;
+            }
+        });
+    </script>
+</body>
+</html>
