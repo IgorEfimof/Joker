@@ -1157,18 +1157,37 @@
             padding: 8px;
             background: rgba(255, 255, 255, 0.8);
             border-radius: 6px;
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            min-height: 120px;
+            transition: background-image 0.5s ease;
+        }
+        
+        /* Фоновые изображения для блока сравнения прогнозов */
+        .comparison-container.joker-bg {
+            background-image: url('icons/icon251.png');
+        }
+        
+        .comparison-container.banana-bg {
+            background-image: url('icons/icon252.png');
         }
         
         .comparison-item {
             flex: 1;
             text-align: center;
             padding: 5px;
+            background: rgba(255, 255, 255, 0.85);
+            border-radius: 4px;
+            margin: 0 2px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
         }
         
         .comparison-label {
             font-size: 0.8rem;
             color: var(--primary-color);
             margin-bottom: 3px;
+            font-weight: bold;
         }
         
         .comparison-value {
@@ -1182,21 +1201,22 @@
             padding: 5px 10px;
             border-radius: 4px;
             min-width: 60px;
+            background: rgba(255, 255, 255, 0.9);
         }
         
         .difference-positive {
-            background-color: rgba(39, 174, 96, 0.2);
-            color: var(--positive-color);
+            background-color: rgba(39, 174, 96, 0.7);
+            color: white;
         }
         
         .difference-negative {
-            background-color: rgba(231, 76, 60, 0.2);
-            color: var(--negative-color);
+            background-color: rgba(231, 76, 60, 0.7);
+            color: white;
         }
         
         .difference-neutral {
-            background-color: rgba(52, 152, 219, 0.2);
-            color: var(--neutral-color);
+            background-color: rgba(52, 152, 219, 0.7);
+            color: white;
         }
         
         /* Joker/Banana explanation */
@@ -2006,8 +2026,8 @@
                         
                         <p><strong>Индикаторы точности прогноза:</strong></p>
                         <ul>
-                            <li>🃏 <strong>JOKER</strong> - минимальное расхождение (менее 5 очков) между прогнозом счета и ожидаемым тоталом. Высокая точность прогноза.</li>
-                            <li>🍌 <strong>BANANA</strong> - значительное расхождение (5 очков и более). Низкая точность прогноза.</li>
+                            <li>🃏 <strong>JOKER</strong> - минимальное расхождение (0-1 очко) между прогнозом счета и ожидаемым тоталом. Высокая точность прогноза.</li>
+                            <li>🍌 <strong>BANANA</strong> - значительное расхождение (2 очка и более). Низкая точность прогноза.</li>
                         </ul>
                         
                         <p><strong>Автоматический поиск усталости:</strong></p>
@@ -2862,7 +2882,7 @@
                 }
                 
                 // Учет индикатора точности
-                if (difference < 5) {
+                if (difference <= 1) {
                     confidence += 10;
                 } else {
                     confidence -= 5;
@@ -3436,14 +3456,14 @@
                 let indicatorMessage = '';
                 let explanation = '';
                 
-                if (difference < 5) {
+                if (difference <= 1) {
                     indicatorType = 'joker';
-                    indicatorMessage = 'Минимальное расхождение. Высокая точность прогноза!';
-                    explanation = 'Расхождение менее 5 очков указывает на высокую согласованность прогнозов. Рекомендуется использовать этот прогноз.';
+                    indicatorMessage = 'Минимальное расхождение (0-1 очко). Высокая точность прогноза!';
+                    explanation = 'Расхождение 0-1 очко указывает на высокую согласованность прогнозов. Рекомендуется использовать этот прогноз.';
                 } else {
                     indicatorType = 'banana';
-                    indicatorMessage = 'Значительное расхождение. Требуется осторожность!';
-                    explanation = 'Расхождение 5 очков и более указывает на низкую согласованность прогнозов. Рекомендуется дополнительный анализ.';
+                    indicatorMessage = 'Значительное расхождение (2 очка и более). Требуется осторожность!';
+                    explanation = 'Расхождение 2 очка и более указывает на низкую согласованность прогнозов. Рекомендуется дополнительный анализ.';
                 }
                 
                 // Формирование рекомендации с учетом типа тотала
@@ -3507,7 +3527,15 @@
                 scorePredictionValue.textContent = predictedScoreSum;
                 totalPredictionValue.textContent = totalPrediction;
                 predictionDifference.textContent = difference;
-                predictionDifference.className = `comparison-difference ${difference < 5 ? 'difference-positive' : 'difference-negative'}`;
+                predictionDifference.className = `comparison-difference ${difference <= 1 ? 'difference-positive' : 'difference-negative'}`;
+                
+                // Обновляем фоновое изображение в зависимости от разницы
+                comparisonContainer.classList.remove('joker-bg', 'banana-bg');
+                if (difference <= 1) {
+                    comparisonContainer.classList.add('joker-bg');
+                } else {
+                    comparisonContainer.classList.add('banana-bg');
+                }
                 
                 // Обновляем индикатор
                 accuracyIndicator.style.display = 'block';
